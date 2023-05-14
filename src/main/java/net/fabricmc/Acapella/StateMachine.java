@@ -251,6 +251,9 @@ public class StateMachine {
             { "open inventory", "openInventory"},
             { "close inventory", "closeScreen"},
             { "place furnace", "placeFurnace"},
+            { "get obsidian", "getObsidian"},
+            { "find obsidian", "findObsidian"},
+            { "mine obsidian", "mineObsidian"},
             { "make portal", "placePortal"},
             { "goin portal", "goinPortal"},
             { "light portal", "lightPortal"},
@@ -259,6 +262,7 @@ public class StateMachine {
             { "goto water", "gotoWater"},
             { "grab water", "grabWater"},
             { "get water", "getWater"},
+            { "place water", "placeWater"},
             { "CRAFTGENERIC", "CRAFTRECIPE"},
             { "equip armor", "equipArmor"},
             { "equip all armor", "equipAllArmor"},
@@ -283,15 +287,18 @@ public class StateMachine {
             { "close inventory", "$" },
             { "equip armor", "$" },
             { "craft planks", "$" },
-            { "close inventory", "$"},
             { "place furnace", "$" },
+            { "get obsidian", "$"},
+            { "find obsidian", "$" },
+            { "mine obsidian", "$" },
             { "make portal", "$" },
             { "goin portal", "$" },
             { "light portal", "$" },
+            { "prepare flint and steel", "$" },
             { "clean inputs", "$" },
             { "goto water", "$"},
             { "grab water", "$"},
-            { "get water", "$" } 
+            { "get water", "$" }, 
             { "kill blazes", "checkHasItem" },
             { "CRAFTGENERIC", "checkHasItem"},
 
@@ -310,7 +317,7 @@ public class StateMachine {
         // addTask("get blaze powder");
         // addTask("enter nether");
         addTask("create portal");
-        // addTask("get obsidian");
+        //addTask("get obsidian");
         // addTask("get diamonds");
         // addTask("get iron");
         // addTask("get stone pickaxe");
@@ -372,10 +379,22 @@ public class StateMachine {
         addTask("goto water");
     }
 
+    public void getObsidian() {
+        the_stack.pop();
+        addTask("find obsidian");
+        addTask("place water");
+        addTask("clean inputs");
+        addTask("get water");
+        addTask("clean inputs");
+        addTask("mine obsidian");
+        
+    }
+
     public void createPortal() {
         the_stack.pop();
         addTask("clean inputs");
         addTask("light portal");
+        addTask("prepare flint and steel");
         addTask("goin portal");
         addTask("make portal");
     }
@@ -608,6 +627,8 @@ public class StateMachine {
             
         }
         //maybe make this better later, maybe toss back onto stack or something?
+    
+    }
 
     public void equipAllArmor(){
         the_stack.pop();
@@ -627,6 +648,36 @@ public class StateMachine {
             }
         }
 
+    }
+
+    public void findObsidian() {
+        //doing a really weird obsidian generator
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+
+        //goto ruined portal (hopefully)
+        baritone.getGetToBlockProcess().getToBlock(Blocks.OBSIDIAN);
+    }
+
+    //will follow findObsidian return
+    public void placeWater() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        
+        //look down to place water
+        Rotation rotate = new Rotation(0, 90);
+        BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
+
+        //place water:
+        if (checkAllHeldItem(Items.WATER_BUCKET)) {
+
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+            
+        }
+    }
+
+    public void mineObsidian() {
+        baritone.getMineProcess().mine(28, Blocks.OBSIDIAN);
     }
 
     public void placePortal() {
