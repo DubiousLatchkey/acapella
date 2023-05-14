@@ -150,6 +150,13 @@ public class StateMachine {
         String task = task_arg.task;
         List<String> args = task_arg.args;
 
+
+        if(actions.get(task) == null){
+            LOGGER.info("initiate_task: No mapping exists for this task!");
+            me.sendMessage(Text.literal("INITIATE TASK FAILED"));
+            clearStack();
+            return;
+        }
         try{
             Method method = this.getClass().getDeclaredMethod( actions.get(task)) ;
 
@@ -177,9 +184,10 @@ public class StateMachine {
         List<String> args = task_arg.args;
         
         String condition = conditions.get(task);
+        if(condition == null) return true;
         if(condition == "$") return true;
         try{
-            Method method = this.getClass().getDeclaredMethod( conditions.get(task)) ;
+            Method method = this.getClass().getDeclaredMethod( condition) ;
             method.setAccessible(true);
 
             try{
@@ -219,8 +227,11 @@ public class StateMachine {
     static {
         actions = Stream.of(new String[][] {
             { "start", "none" }, 
+            { "defeat enderDragon", "ultimateTask"},
             { "get wood", "getWood" },
             { "get planks", "getPlanks"},
+            { "craft planks", "craftWoodPlanks"},
+            { "craft craft", "craftCraftingTable"},
             { "place craft", "placeCraftingTable"},
             { "start craft", "openCraftingTable"},
             { "open inventory", "openInventory"},
@@ -235,6 +246,7 @@ public class StateMachine {
 
         conditions = Stream.of(new String[][] {
             { "start", "none" }, 
+            { "defeat enderDragon", "$"},
             { "get wood", "$" },
             { "get planks", "$" },
             { "start craft", "$" },
@@ -245,8 +257,47 @@ public class StateMachine {
             { "make portal", "$" },
             { "light portal", "$" },
             { "clean inputs", "$" } 
+
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
+
+
+    public void ultimateTask(){
+        the_stack.pop();
+        // addTask("kill dragon");
+        // addTask("enter end");
+        // addTask("activate endportal");
+        // addTask("find stronghold");
+        // addTask("get eye of ender");
+        // addTask("trade for ender pearls");
+        // addTask("get blaze powder");
+        // addTask("enter nether");
+        // addTask("build portal");
+        // addTask("get obsidian");
+        // addTask("get diamonds");
+        // addTask("get iron");
+        // addTask("get stone pickaxe");
+        // addTask("get wood pickaxe");
+        addTask("place craft");
+        addTask("craft craft");
+        addTask("get planks");
+
+
+    }
+
+
+
+
+    // public void CRAFTRECIPE(List<String> args){
+    //     Identifier my_item = Identifier.tryParse(args.get(0));
+    //     int number;
+    //     try {
+    //         number = Integer.parseInt(args.get(1));
+    //     } catch (NumberFormatException e) {
+    //         LOGGER.info("Invalid number format: " + args.get(1));
+    //         number = 5;
+    //     }
+    // }
 
     public void getPlanks(){
         the_stack.pop();
@@ -375,6 +426,20 @@ public class StateMachine {
         return items; 
     }
 
+    public int getCountOfItem(PlayerInventory inventory, Identifier id) {
+        int count = 0;
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            
+            if (Registries.ITEM.getId(stack.getItem()) == id) {
+                count += stack.getCount();
+            }
+        }
+        
+        return count; 
+    }
+
+
     public void craftWoodPlanks(){
         craftItem(Blocks.OAK_PLANKS.asItem());
     }
@@ -383,6 +448,10 @@ public class StateMachine {
         craftItem(Blocks.FURNACE.asItem());
     }
   
+    public void craftCraftingTable(){
+        craftItem(Blocks.CRAFTING_TABLE.asItem());
+    }
+
     public void placeCraftingTable(){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos craftingPos = me.getBlockPos();

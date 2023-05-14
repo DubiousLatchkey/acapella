@@ -1,6 +1,8 @@
 package net.fabricmc.Acapella;
 
 import net.fabricmc.api.ModInitializer;
+
+import org.apache.http.entity.EntityTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +23,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Box;
 import net.minecraft.block.Blocks;
 
 
@@ -161,6 +170,67 @@ public class Acapella implements ModInitializer {
 
 			return 1;
 		})));
+
+		ClientTickEvents.START_CLIENT_TICK.register(mc -> {
+			// if (mc.player != null
+			// 				&& mc.player.getAttackCooldownProgress(0) >= 1) {
+			// 	if (mc.crosshairTarget != null && mc.crosshairTarget.getType() == HitResult.Type.ENTITY) {
+			// 		Entity entity = ((EntityHitResult)mc.crosshairTarget).getEntity();
+			// 		if (entity.isAlive() && entity.isAttackable()) {
+			// 			mc.interactionManager.attackEntity(mc.player, entity);
+			// 		}
+			// 	}
+			// }
+			if (mc.world != null && mc.world.getTime() % 15 == 0) {
+				Box nearby = new Box(mc.player.getBlockPos().add(-6,-6,-6),mc.player.getBlockPos().add(6,6,6));
+				List<Entity> entities = new ArrayList<Entity>();
+
+
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.ZOMBIE, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.SKELETON, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.SPIDER, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.SILVERFISH, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.ENDERMAN, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.CAVE_SPIDER, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.PIG, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.COW, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+				for (Entity entity : mc.world.getEntitiesByType(EntityType.BLAZE, nearby, i->true)){
+					LOGGER.info(entity.getEntityName());
+					entities.add( entity);
+				}
+
+
+				entities.forEach(entity -> {
+					if (entity.isAttackable()){
+						mc.interactionManager.attackEntity(mc.player, entity);
+					}
+				});
+			}
+		});
 		
 		
     }
