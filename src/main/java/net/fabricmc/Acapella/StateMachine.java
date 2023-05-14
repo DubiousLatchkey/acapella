@@ -17,9 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 
 import net.minecraft.client.*;
-
-
-
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
 
@@ -222,6 +220,7 @@ public class StateMachine {
             { "get wood", "getWood" },
             { "get planks", "getPlanks"},
             { "start craft", "openCraftingTable"},
+            { "open inventory", "openInventory"},
             { "craft planks", "craftWoodPlanks"}  
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -231,6 +230,7 @@ public class StateMachine {
             { "get wood", "$" },
             { "get planks", "$"},
             { "start craft", "$"},
+            { "open inventory", "$"},
             { "craft planks", "$"}  
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
@@ -238,7 +238,7 @@ public class StateMachine {
     public void getPlanks(){
         the_stack.pop();
         addTask("craft planks");
-        addTask("start craft");
+        addTask("open inventory");
         addTask("get wood");
 
     }
@@ -274,6 +274,11 @@ public class StateMachine {
 
     public void openCraftingTable(){
         baritone.getGetToBlockProcess().getToBlock(Blocks.CRAFTING_TABLE);
+    }
+
+    public void openInventory(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.setScreen(new InventoryScreen(client.player));
     }
 
     public void craftItem(Item item){
