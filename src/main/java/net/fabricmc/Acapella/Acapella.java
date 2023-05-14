@@ -128,7 +128,7 @@ public class Acapella implements ModInitializer {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
              
-			 stateMachine.addTask("get planks");
+			 stateMachine.addTask("defeat enderDragon");
 			 //stateMachine.addTask("get wood");
 			 
 			 return 1;

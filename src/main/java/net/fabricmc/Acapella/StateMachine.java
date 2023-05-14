@@ -54,6 +54,7 @@ import baritone.api.utils.input.*;
 
 //goto:
 import baritone.api.pathing.goals.Goal;
+import baritone.api.pathing.goals.GoalBlock;
 import baritone.api.pathing.goals.GoalXZ;
 import baritone.api.process.ICustomGoalProcess;
 
@@ -238,9 +239,13 @@ public class StateMachine {
             { "close inventory", "closeScreen"},
             { "place furnace", "placeFurnace"},
             { "make portal", "placePortal"},
+            { "goin portal", "goinPortal"},
             { "light portal", "lightPortal"},
-            { "craft planks", "craftWoodPlanks"},
+            { "create portal", "createPortal"},
             { "clean inputs", "releaseKeyboard"},
+            { "goto water", "gotoWater"},
+            { "grab water", "grabWater"},
+            { "get water", "getWater"}
 
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -251,13 +256,18 @@ public class StateMachine {
             { "get wood", "$" },
             { "get planks", "$" },
             { "start craft", "$" },
-            {"place craft", "$" },
+            { "place craft", "$" },
             { "open inventory", "$" },
             { "craft planks", "$" },
+            { "close inventory", "$"},
             { "place furnace", "$" },
             { "make portal", "$" },
+            { "goin portal", "$" },
             { "light portal", "$" },
-            { "clean inputs", "$" } 
+            { "clean inputs", "$" },
+            { "goto water", "$"},
+            { "grab water", "$"},
+            { "get water", "$" } 
 
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
@@ -273,15 +283,16 @@ public class StateMachine {
         // addTask("trade for ender pearls");
         // addTask("get blaze powder");
         // addTask("enter nether");
-        // addTask("build portal");
+        addTask("create portal");
         // addTask("get obsidian");
         // addTask("get diamonds");
         // addTask("get iron");
         // addTask("get stone pickaxe");
         // addTask("get wood pickaxe");
-        addTask("place craft");
-        addTask("craft craft");
-        addTask("get planks");
+        //addTask("place craft");
+        //addTask("craft craft");
+        //addTask("get planks");
+        //addTask("get water");
 
 
     }
@@ -320,10 +331,18 @@ public class StateMachine {
         getMaterial(Blocks.STONE);
     }
 
+    public void getWater() {
+        the_stack.pop();
+        addTask("clean inputs");
+        addTask("grab water");
+        addTask("goto water");
+    }
+
     public void createPortal() {
         the_stack.pop();
         addTask("clean inputs");
         addTask("light portal");
+        addTask("goin portal");
         addTask("make portal");
     }
 
@@ -473,11 +492,9 @@ public class StateMachine {
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.JUMP, true);
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys(); 
         */
-
-
 
     }
 
@@ -492,6 +509,30 @@ public class StateMachine {
         if (!out) {
             me.sendMessage(Text.literal("failed to place furnace"));
         }
+    }
+
+    public void gotoWater() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+
+        //goto water
+        baritone.getGetToBlockProcess().getToBlock(Blocks.WATER);
+
+        //look at water
+        Rotation rotate = new Rotation(0, 90);
+        BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
+
+    }
+
+    public void grabWater() {
+        //right click with bucket
+        if (checkAllHeldItem(Items.BUCKET)) {
+
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+            
+        }
+        //maybe make this better later, maybe toss back onto stack or something?
     }
 
     public void placePortal() {
@@ -512,27 +553,41 @@ public class StateMachine {
         lastPortalPos = portalPos;
 
     }
-    
+
     //NOTE: only works on a portal you've placed immeditaly before. Otherwise, lightPortal will just fail.
+    public void goinPortal() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        //navigate to y + 1 z + 1 location at portalPos
+        BaritoneAPI.getSettings().blocksToDisallowBreaking.value.add(Blocks.OBSIDIAN);
+        Goal newt = new GoalBlock(lastPortalPos.getX(), lastPortalPos.getY() + 1, lastPortalPos.getZ() + 1);
+        //Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
+        BaritoneAPI.getSettings().allowWaterBucketFall.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
+    }
+    
+    
     public void lightPortal() {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
 
         //time to light the portal:
-
-        //navigate to y + 1 z + 1 location at portalPos
-        Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newGoal);
 
         //look down on portal block
         Rotation rotate = new Rotation(0, 90);
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
         
-        // TODO: make compatible with stack and make sure that player has flint and steel in hand.
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
-
+        //reset setting
+        BaritoneAPI.getSettings().allowWaterBucketFall.value = true;
+        BaritoneAPI.getSettings().blocksToDisallowBreaking.value.remove(Blocks.OBSIDIAN);
+        
+        // make sure flint and steel is in hand:
+        if (checkAllHeldItem(Items.FLINT_AND_STEEL)) {
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+        }
         //don't forget to release keyboard input when stack is implemented
+
+        
     }
 
     public void releaseKeyboard() {
@@ -565,6 +620,19 @@ public class StateMachine {
         }else{
             return false;
         }
+    }
+
+    //used ONLY for right clicks, as it checks both main hand and off-hand
+    private boolean checkAllHeldItem(Item item) {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        Iterable<ItemStack> items = me.getHandItems();
+        for (ItemStack stack : items ) {
+            if (stack.isOf(item)) {
+                return true;
+            }
+        }
+        return false;
+
     }
 
 }
