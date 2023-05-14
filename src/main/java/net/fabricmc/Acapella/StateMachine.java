@@ -149,13 +149,13 @@ public class StateMachine {
         //make this work with Task<>
         String task = task_arg.task;
         List<String> args = task_arg.args;
-        
+
         try{
             Method method = this.getClass().getDeclaredMethod( actions.get(task)) ;
 
             method.setAccessible(true);
             try{
-                if(args == null){
+                if(args == null || args.size() == 0){
                     Object o = method.invoke(this);
                 }else{
                     Object o = method.invoke(this,args);
@@ -184,21 +184,21 @@ public class StateMachine {
 
             try{
                 Object o;
-                if(args == null){
+                if(args == null || args.size() == 0){
                     o = method.invoke(this);
                 }else{
                     o = method.invoke(this,args);
                 }
                 return (boolean)o;
             } catch(IllegalAccessException e){
-                LOGGER.info("initiate_task: No accessing that from here");
+                LOGGER.info("check_condition: No accessing that from here");
             } catch (InvocationTargetException e){
-                LOGGER.info("initiate_task: What are you invoking from anyway?");
+                LOGGER.info("check_condition: What are you invoking from anyway?");
             } catch (Exception e){
-                LOGGER.info("initiate_task: " + e.toString());
+                LOGGER.info("check_condition: " + e.toString());
             }
         } catch(NoSuchMethodException e){
-            LOGGER.info("initiate_task: No method found");
+            LOGGER.info("check_condition: No method found");
         }
 
         return false;
