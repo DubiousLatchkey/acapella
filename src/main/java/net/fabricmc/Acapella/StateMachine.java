@@ -324,11 +324,11 @@ public class StateMachine {
         // addTask("get wood pickaxe");
         //addTask("craft craft");
         //addTask("get water");
-        addTask("place craft");
-        addTask("close inventory");
-        addTask("CRAFTGENERIC", "crafting_table", "1");
-        addTask("open inventory");
-        addTask("get planks");
+        //addTask("place craft");
+        //addTask("close inventory");
+        //addTask("CRAFTGENERIC", "crafting_table", "1");
+        //addTask("open inventory");
+        //addTask("get planks");
 
 
 
@@ -395,6 +395,7 @@ public class StateMachine {
         addTask("clean inputs");
         addTask("light portal");
         addTask("prepare flint and steel");
+        addTask("clean inputs");
         addTask("goin portal");
         addTask("make portal");
     }
@@ -489,7 +490,10 @@ public class StateMachine {
     public void moveFlintAndSteelToPosition4(){
         MinecraftClient client = MinecraftClient.getInstance();
         int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FLINT_AND_STEEL));
-        swapSlots(slot, 39);
+        if (slot != 39) {
+            swapSlots(slot, 39);
+        }
+        
     }
 
     public void swapSlots (int slot1, int slot2){
@@ -685,7 +689,7 @@ public class StateMachine {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos portalPos = me.getBlockPos();
         
-        //me.sendMessage(Text.literal("currently at" + portalPos.getX() + "," + portalPos.getY() + "," + portalPos.getZ()));
+        me.sendMessage(Text.literal("currently at" + portalPos.getX() + "," + portalPos.getY() + "," + portalPos.getZ()));
         
         BaritoneAPI.getSettings().allowInventory.value = true;
         Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("portal.schem", portalPos);
@@ -705,6 +709,9 @@ public class StateMachine {
         //navigate to y + 1 z + 1 location at portalPos
         BaritoneAPI.getSettings().blocksToDisallowBreaking.value.add(Blocks.OBSIDIAN);
         Goal newt = new GoalBlock(lastPortalPos.getX(), lastPortalPos.getY() + 1, lastPortalPos.getZ() + 1);
+
+        me.sendMessage(Text.literal("going to" + lastPortalPos.getX() + "," + lastPortalPos.getY() + 1 + "," + lastPortalPos.getZ() + 1));
+
         //Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
         BaritoneAPI.getSettings().allowWaterBucketFall.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
@@ -724,6 +731,11 @@ public class StateMachine {
         //reset setting
         BaritoneAPI.getSettings().allowWaterBucketFall.value = true;
         BaritoneAPI.getSettings().blocksToDisallowBreaking.value.remove(Blocks.OBSIDIAN);
+
+        
+        me.getInventory().selectedSlot = 3;
+        MinecraftClient.getInstance().player.getInventory().markDirty();
+        
         
         // make sure flint and steel is in hand:
         if (checkAllHeldItem(Items.FLINT_AND_STEEL)) {
