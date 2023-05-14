@@ -17,9 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 
 import net.minecraft.client.*;
-
-
-
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
 
@@ -33,10 +31,12 @@ import net.minecraft.network.message.MessageType;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.registry.Registries;
+import net.minecraft.screen.FurnaceScreenHandler;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-
+import net.minecraft.util.collection.DefaultedList;
 //schematics:
 import baritone.api.schematic.*;
 import baritone.api.process.IBuilderProcess;
@@ -147,13 +147,13 @@ public class StateMachine {
         //make this work with Task<>
         String task = task_arg.task;
         List<String> args = task_arg.args;
-        
+
         try{
             Method method = this.getClass().getDeclaredMethod( actions.get(task)) ;
 
             method.setAccessible(true);
             try{
-                if(args == null){
+                if(args == null || args.size() == 0){
                     Object o = method.invoke(this);
                 }else{
                     Object o = method.invoke(this,args);
@@ -182,21 +182,21 @@ public class StateMachine {
 
             try{
                 Object o;
-                if(args == null){
+                if(args == null || args.size() == 0){
                     o = method.invoke(this);
                 }else{
                     o = method.invoke(this,args);
                 }
                 return (boolean)o;
             } catch(IllegalAccessException e){
-                LOGGER.info("initiate_task: No accessing that from here");
+                LOGGER.info("check_condition: No accessing that from here");
             } catch (InvocationTargetException e){
-                LOGGER.info("initiate_task: What are you invoking from anyway?");
+                LOGGER.info("check_condition: What are you invoking from anyway?");
             } catch (Exception e){
-                LOGGER.info("initiate_task: " + e.toString());
+                LOGGER.info("check_condition: " + e.toString());
             }
         } catch(NoSuchMethodException e){
-            LOGGER.info("initiate_task: No method found");
+            LOGGER.info("check_condition: No method found");
         }
 
         return false;
@@ -221,10 +221,11 @@ public class StateMachine {
             { "get planks", "getPlanks"},
             { "place craft", "placeCraftingTable"},
             { "start craft", "openCraftingTable"},
-            { "craft planks", "craftWoodPlanks"},
+            { "open inventory", "openInventory"},
             { "place furnace", "placeFurnace"},
             { "make portal", "placePortal"},
             { "light portal", "lightPortal"}
+
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -234,15 +235,15 @@ public class StateMachine {
             { "get planks", "$"},
             { "start craft", "$"},
             {"place craft", "$"},
-            { "craft planks", "$"}
+            { "open inventory", "$"},
+            { "craft planks", "$"}  
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
 
     public void getPlanks(){
         the_stack.pop();
         addTask("craft planks");
-        addTask("start craft");
-        addTask("place craft");
+        addTask("open inventory");
         addTask("get wood");
 
     }
@@ -285,6 +286,11 @@ public class StateMachine {
         baritone.getGetToBlockProcess().getToBlock(Blocks.CRAFTING_TABLE);
     }
 
+    public void openInventory(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.setScreen(new InventoryScreen(client.player));
+    }
+
     public void craftItem(Item item){
         Identifier id = Registries.ITEM.getId(item);
         MinecraftClient client = MinecraftClient.getInstance();
@@ -309,17 +315,27 @@ public class StateMachine {
     }
 
     public void smeltIron(){
-        smeltItem(Items.IRON_ORE);
+        smeltItem(Items.RAW_IRON);
     }
 
     public void smeltItem(Item item){
-        Identifier id = Registries.ITEM.getId(item);
         MinecraftClient client = MinecraftClient.getInstance();
-        int coalSlot = findItemStack(client.player.getInventory(), Registries.ITEM.getId(Items.COAL));
-        int smelteeSlot = findItemStack(client.player.getInventory(), Registries.ITEM.getId(item));
+        int coalSlot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.COAL));
+        int smelteeSlot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(item));
 
         LOGGER.info(Integer.toString(coalSlot));
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, coalSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, smelteeSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
+
+    }
+
+    public int findInSlots(DefaultedList<Slot> listOfSlots, Identifier id){
+        for( int i = 0; i < listOfSlots.size(); i++){
+            if(Registries.ITEM.getId(listOfSlots.get(i).getStack().getItem()) == id ){
+                return i;
+            }
+        }
+        return 1000;
     }
 
     public int findItemStack(PlayerInventory inventory, Identifier id) {
@@ -333,7 +349,18 @@ public class StateMachine {
         
         return 1000; 
     }
-    
+    public List<ItemStack> getStacksOfItem(PlayerInventory inventory, Identifier id) {
+        List<ItemStack> items = new ArrayList<>();
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            
+            if (Registries.ITEM.getId(stack.getItem()) == id) {
+                items.add(stack);
+            }
+        }
+        
+        return items; 
+    }
 
     public void craftWoodPlanks(){
         craftItem(Blocks.OAK_PLANKS.asItem());
@@ -415,6 +442,33 @@ public class StateMachine {
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
 
         //don't forget to release keyboard input when stack is implemented
+    }
+
+    public boolean checkHasItem(List<String> args){
+
+        Identifier my_item = Identifier.tryParse(args.get(0));
+        int number;
+        try {
+            number = Integer.parseInt(args.get(1));
+        } catch (NumberFormatException e) {
+            LOGGER.info("Invalid number format: " + args.get(1));
+            return false;
+        }
+        LOGGER.info(my_item.toString());
+        LOGGER.info("Number: " + number);
+
+        PlayerInventory inv = me.getInventory();
+        List<ItemStack> stacks = getStacksOfItem(inv,my_item);
+        int count = 0;
+        for(ItemStack s: stacks){
+            count += s.getCount();
+        }
+
+        if(count >= number) {
+            return true;
+        }else{
+            return false;
+        }
     }
 
 }
