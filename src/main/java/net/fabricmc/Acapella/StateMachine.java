@@ -205,6 +205,17 @@ public class StateMachine {
         ticksToIdle = 20;
     }
 
+    public void idleCustom(List<String> args){
+        int number;
+        try {
+            number = Integer.parseInt(args.get(0));
+        } catch (NumberFormatException e) {
+            LOGGER.info("Invalid number format: " + args.get(1));
+            number = 100;
+        }
+        ticksToIdle = number;
+    }
+
     private boolean check_condition(Task task_arg){
         String task = task_arg.task;
         List<String> args = task_arg.args;
@@ -287,6 +298,10 @@ public class StateMachine {
             { "farm blazes", "farmBlazes"},
             { "kill blazes", "killBlazes"},
             { "goto nether fence", "gotoNetherBrickFence"},
+            { "farm endermen", "farmEndermen"},
+            { "kill endermen", "killEndermen"},
+            { "goto warped forest", "gotoWarpedForest"},
+
             { "goto spawner", "gotoSpawner"},
             { "prepare flint and steel", "prepareFlintAndSteel"},
             { "move flint and steel", "moveFlintAndSteelToPosition4"},
@@ -306,6 +321,9 @@ public class StateMachine {
             { "goto stronghold", "throwEye"},
             { "release keys", "releaseKeyboard"},
             { "idle 1", "idle1"},
+            { "use furnace with iron", "furnaceIron"},
+            { "start furnace", "openFurnace"},
+            { "idle custom", "idleCustom"}
             {"fill frames", "fillFrames"},
             {"fill frame data", "fillFrameData"},
             {"goto center of frames", "gotoCenterOfFrames"},
@@ -313,6 +331,7 @@ public class StateMachine {
             {"goto portal room", "gotoPortalRoom"},
             {"goto bedrock", "gotoBedrock"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
+
 
 
         conditions = Stream.of(new String[][] {
@@ -339,6 +358,7 @@ public class StateMachine {
             { "grab water", "$"},
             { "get water", "$" }, 
             { "kill blazes", "checkHasItem" },
+            { "kill endermen", "checkHasItem" },
             { "CRAFTGENERIC", "checkHasItem"},
             { "try goto stronghold", "foundStronghold"},
 
@@ -348,6 +368,7 @@ public class StateMachine {
 
     public void ultimateTask(){
         the_stack.pop();
+
 
         // addTask("kill dragon");
         // addTask("enter end");
@@ -360,27 +381,54 @@ public class StateMachine {
         // addTask("create portal");
         //addTask("get obsidian");
         // addTask("get diamonds");
-        // addTask("get iron");
-        // addTask("get stone pickaxe");
-        // addTask("get wood pickaxe");
+        
+        addTask("farm endermen");
 
-        // addTask("GETGENERIC", "")
+        addTask("farm blazes");
+        addTask("GETGENERIC","obsidian","10");
+
+        addTask("idle custom","300");
+
+        addTask("create portal");
+        addTask("GETGENERIC","obsidian","10");
+
+        // addTask("equip all armor");
+
+        // closeAndGrabCraftingTable();
+        // addTask("CRAFTGENERIC","iron_chestplate","1");
+        // addTask("CRAFTGENERIC","iron_helmet","1");
+        // addTask("CRAFTGENERIC","iron_leggings","1");
+        // addTask("CRAFTGENERIC","iron_boots","1");
+        // addTask("CRAFTGENERIC","flint_and_steel","1");
+        // placeAndOpenCraftingTable();
 
 
-        addTask("smelt iron");
-        addTask("start furnace");
+        // addTask("use furnace with iron");
 
-        addTask("place furnace");
-        addTask("prepare furnace");
-        addTask("look angled");
-        addTask("move north");
+        // addTask("GETGENERIC","gravel","20");
+        // addTask("GETGENERIC","iron_ore","24");
+        // closeAndGrabCraftingTable();
+        // addTask("CRAFTGENERIC","diamond_pickaxe","1");
+        // addTask("CRAFTGENERIC","diamond_sword","1");
+        // placeAndOpenCraftingTable();
+
+        // addTask("GETGENERIC","diamond_ore","5");
+        
+        // closeAndGrabCraftingTable();
+        // addTask("CRAFTGENERIC","iron_pickaxe","1");
+        // addTask("CRAFTGENERIC","stick","4");
+        // addTask("CRAFTGENERIC","oak_planks","20");
+        // placeAndOpenCraftingTable();
+
+        // addTask("GETGENERIC", "furnace", "1");
+        // addTask("use furnace with iron");
         // closeAndGrabCraftingTable();
         // addTask("CRAFTGENERIC","furnace","1");
         // placeAndOpenCraftingTable();
 
         
-        // addTask("GETGENERIC", "iron_ore", "20");
-        // addTask("GETGENERIC", "coal_ore", "5");
+        // addTask("GETGENERIC", "iron_ore", "7");
+        // addTask("GETGENERIC", "coal_ore", "15");
 
         
         // addTask("GETGENERIC", "oak_log","20");
@@ -392,12 +440,18 @@ public class StateMachine {
         // addTask("CRAFTGENERIC","stone_shovel","1");
         // placeAndOpenCraftingTable();
 
-        // addTask("GETGENERIC", "stone","20","cobblestone");
+        // addTask("GETGENERIC", "cobblestone","20","stone");
+        // addTask("break underneath");
+        // addTask("break underneath");
 
         // closeAndGrabCraftingTable();
         // addTask("CRAFTGENERIC","wooden_pickaxe","1");
-        // addTask("CRAFTGENERIC","stick","3");
+        // addTask("CRAFTGENERIC","wooden_shovel","1");
+        // addTask("CRAFTGENERIC","stick","4");
         // placeAndOpenCraftingTable();
+        // addTask("close inventory");
+        // addTask("CRAFTGENERIC", "crafting_table", "1");
+        // addTask("open inventory");
 
         
         // addTask("get planks");
@@ -417,19 +471,27 @@ public class StateMachine {
     public void placeAndOpenCraftingTable(){
         addTask("start craft");
         addTask("place craft");
-        addTask("close inventory");
-        addTask("CRAFTGENERIC", "crafting_table", "1");
-        addTask("open inventory");
 
+        
+    }
+
+    public void furnaceIron(){
+        the_stack.pop();
+        addTask("smelt iron");
+        addTask("start furnace");
+        addTask("place furnace");
+        addTask("prepare furnace");
+        addTask("look angled");
+        addTask("move north");
         
     }
 
     public void getPlanks(){
         the_stack.pop();
         addTask("close inventory");
-        addTask("CRAFTGENERIC", "oak_planks", "5");
+        addTask("CRAFTGENERIC", "oak_planks", "7");
         addTask("open inventory");
-        addTask("GETGENERIC","oak_log", "5");
+        addTask("GETGENERIC","oak_log", "7");
     }
 
     public void setRadiusSmall(){
@@ -519,21 +581,12 @@ public class StateMachine {
         addTask("goto water");
     }
 
-    public void getObsidian() {
-        the_stack.pop();
-        addTask("find obsidian");
-        addTask("place water");
-        addTask("clean inputs");
-        addTask("get water");
-        addTask("clean inputs");
-        addTask("mine obsidian");
-        
-    }
 
     public void createPortal() {
         the_stack.pop();
         addTask("clean inputs");
         addTask("light portal");
+        addTask("idle custom","50");
         addTask("prepare flint and steel");
         addTask("goin portal");
         addTask("make portal");
@@ -599,10 +652,20 @@ public class StateMachine {
         MinecraftClient client = MinecraftClient.getInstance();
         int coalSlot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.COAL));
         int smelteeSlot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(item));
-
+        
+        
+        int count = getCountOfItem(client.player.getInventory(), Registries.ITEM.getId(item));
+        
+        me.sendMessage(Text.literal("We have " + count + " iron"));
+        
         LOGGER.info(Integer.toString(coalSlot));
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, coalSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, smelteeSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
+
+
+        the_stack.pop();
+        addTask("retrieve furnace");
+        addTask("idle custom", "" + (count*200));
 
     }
 
@@ -619,7 +682,7 @@ public class StateMachine {
         the_stack.pop();
         addTask("close inventory");
         addTask("retrieve slot3");
-        addTask("start furnace");
+        // addTask("start furnace");
     }
 
     public void retrieveSlot3(){
@@ -645,6 +708,8 @@ public class StateMachine {
         MinecraftClient client = MinecraftClient.getInstance();
         int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FLINT_AND_STEEL));
         swapSlots(slot, 39);
+        me.getInventory().selectedSlot = 3;
+
     }
 
     public void moveFurnaceToPosition5(){
@@ -656,7 +721,7 @@ public class StateMachine {
 
     public void swapSlots (int slot1, int slot2){
         MinecraftClient client = MinecraftClient.getInstance();
-
+        if(slot1 == slot2) return;
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, me);
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot2, 0, SlotActionType.PICKUP, me);
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, me);
@@ -676,15 +741,29 @@ public class StateMachine {
 
     public void farmBlazes(){
         the_stack.pop();
-        addTask("kill blazes", "minecraft:blaze_rod", "7");
+        addTask("kill blazes", "blaze_rod", "7");
         addTask("goto spawner");
-        addTask("goto nether fence");
+        addTask("GETGENERIC", "nether_brick_fence","1");
 
     }
 
-    public void gotoNetherBrickFence(){
-        baritone.getGetToBlockProcess().getToBlock(Blocks.NETHER_BRICK_FENCE);
+    public void farmEndermen(){
+        the_stack.pop();
+        addTask("kill endermen", "ender_pearl", "12");
+        // addTask("goto spawner");
+        addTask("GETGENERIC", "warped_nylium","1");
+
     }
+
+
+    // public void gotoNetherBrickFence(){
+    //     baritone.getGetToBlockProcess().getToBlock(Blocks.NETHER_BRICK_FENCE);
+    // }
+
+    // public void gotoWarpedForest(){
+    //     baritone.getGetToBlockProcess().getToBlock(Blocks.WARPED_NYLIUM);
+    // }
+
 
     public void gotoSpawner(){
         baritone.getGetToBlockProcess().getToBlock(Blocks.SPAWNER);
@@ -693,6 +772,11 @@ public class StateMachine {
     public void killBlazes(List<String> args){
         baritone.getFollowProcess().follow(i -> i.getType() ==  EntityType.BLAZE);
     }
+
+    public void killEndermen(List<String> args){
+        baritone.getFollowProcess().follow(i -> i.getType() ==  EntityType.ENDERMAN);
+    }
+
 
     public List<ItemStack> getStacksOfItem(PlayerInventory inventory, Identifier id) {
         List<ItemStack> items = new ArrayList<>();
@@ -744,8 +828,7 @@ public class StateMachine {
 
     public void moveNorthOne(){
         BlockPos my_pos = me.getBlockPos();
-
-        Goal newt = new GoalBlock(my_pos.getX(), my_pos.getY(), my_pos.getZ() - 1);
+        Goal newt = new GoalBlock(my_pos.getX(), my_pos.getY(), my_pos.getZ() - 2);
         //Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
         BaritoneAPI.getSettings().allowWaterBucketFall.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
@@ -789,7 +872,6 @@ public class StateMachine {
         // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("list=false");
         // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("[facing=north,lit=false]");
         
-
         // LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.toString());
         // LOGGER.info(BaritoneAPI.getSettings().buildIgnoreProperties.toString());
 
@@ -1099,6 +1181,13 @@ public class StateMachine {
         if(count >= number) {
             return true;
         }else{
+            if(args.get(0) == "blaze_rod"){
+                addTask("goto spawner");
+                addTask("GETGENERIC","blaze_rod",""+ number);
+            }
+            if(args.get(0) == "ender_pearl"){
+                addTask("GETGENERIC","ender_pearl",""+ number);
+            }
             return false;
         }
     }

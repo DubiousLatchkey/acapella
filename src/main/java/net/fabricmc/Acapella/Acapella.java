@@ -162,7 +162,9 @@ public class Acapella implements ModInitializer {
 			if(minecraftClient.player == null) return;   //prevents this function from running while in game menu
 			//THIS FUNCTION RUNS EVERY SINGLE TICK.
 			//THIS FUNCTION HANDLES CODE THAT SHOULD ONLY BE RELEVANT DURING THE EXECUTION OF /beatMinecraft
-			if(stateMachine.ticksToIdle > 0){ stateMachine.ticksToIdle--; return;}
+			if(stateMachine.ticksToIdle > 0){ 
+				LOGGER.info("Ticks left: " + stateMachine.ticksToIdle);
+				stateMachine.ticksToIdle--; return;}
 			if(stateMachine == null) return;
 			if(!stateMachine.active) return;
 				
@@ -294,6 +296,19 @@ public class Acapella implements ModInitializer {
 						entities.add( entity);
 					}
 					for (Entity entity : mc.world.getEntitiesByType(EntityType.HOGLIN, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.WITHER_SKELETON, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.MAGMA_CUBE, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.PIGLIN, nearby, i->true)){
 						LOGGER.info(entity.getEntityName());
 						entities.add( entity);
 					}
