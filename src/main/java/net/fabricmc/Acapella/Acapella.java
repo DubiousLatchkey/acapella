@@ -53,6 +53,7 @@ public class Acapella implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("modid");
     //public static final Item CUSTOM_ITEM = new Item(new FabricItemSettings());
 	StateMachine stateMachine;
+	boolean wasEating = false;
 	
 	@Override
 	public void onInitialize() {
@@ -132,10 +133,12 @@ public class Acapella implements ModInitializer {
          .executes(context -> {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
-             
-			 stateMachine.addTask("defeat enderDragon");
-			 
+
+           
+           stateMachine.addTask("defeat enderDragon");
+
 			 //stateMachine.addTask("prepare flint and steel");
+
 			 
 			 return 1;
         })));
@@ -200,15 +203,38 @@ public class Acapella implements ModInitializer {
 			if(mc.world != null && mc.player.getHungerManager().isNotFull()){
 				//Eat
 				PlayerInventory inventory = mc.player.getInventory();
-				for (int i = 0; i < inventory.size();i++){
+				for (int i = 0; i < 9;i++){
 					ItemStack stack = inventory.getStack(i);
 					if(stack.isFood()){
-						mc.player.eatFood(mc.world, stack);
+						if(inventory.selectedSlot != i){
+						inventory.selectedSlot = i;
+						inventory.markDirty();
+						//stack.finishUsing(mc.world, mc.player);
+						//mc.player.eatFood(mc.world, stack);
+						// mc.player.setCurrentHand(Hand.MAIN_HAND);
+						// mc.player.emitGameEvent(GameEvent.ITEM_INTERACT_START);
+						// ServerWorld world = mc.getServer().getWorld((RegistryKey<World>)mc.getServer().getWorldRegistryKeys().toArray()[0]);
+						// ServerPlayerEntity playerServer = world.getPlayers().get(0);
+						// LOGGER.info(Boolean.toString(world.isClient));
+						// for (int j = 0; j < 35; j++){
+						// 	//LOGGER.info(Integer.toString(mc.player.getItemUseTimeLeft()));
+						// 	((LivingEntity)mc.player).tick();
+						// 	((LivingEntity)playerServer).tick();
+						// }
+						
+						}
+						//mc.player.handleStatus(EntityStatuses.CONSUME_ITEM);
+						mc.options.useKey.setPressed(true);
+						wasEating = true;
 						break;
 					}
 				}
 			}
 			else{
+				if(wasEating){
+					mc.options.useKey.setPressed(false);
+				}
+				
 				if (mc.world != null && mc.world.getTime() % 15 == 0) {
 					Box nearby = new Box(mc.player.getBlockPos().add(-6,-6,-6),mc.player.getBlockPos().add(6,6,6));
 					List<Entity> entities = new ArrayList<Entity>();
@@ -257,6 +283,11 @@ public class Acapella implements ModInitializer {
 						entities.add( entity);
 					}
 
+					if(entities.size() > 0){
+						PlayerInventory inventory = mc.player.getInventory();
+						inventory.selectedSlot = 0;
+						inventory.markDirty();
+					}
 
 					entities.forEach(entity -> {
 						if (entity.isAttackable()){

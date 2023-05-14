@@ -254,9 +254,18 @@ public class StateMachine {
             { "start furnace", "openFurnace"},
             { "place furnace", "placeFurnace"},
             { "smelt iron", "smeltIron"},
+            { "get obsidian", "getObsidian"},
+            { "find obsidian", "findObsidian"},
+            { "mine obsidian", "mineObsidian"},
             { "make portal", "placePortal"},
+            { "goin portal", "goinPortal"},
             { "light portal", "lightPortal"},
+            { "create portal", "createPortal"},
             { "clean inputs", "releaseKeyboard"},
+            { "goto water", "gotoWater"},
+            { "grab water", "grabWater"},
+            { "get water", "getWater"},
+            { "place water", "placeWater"},
             { "CRAFTGENERIC", "CRAFTRECIPE"},
             { "GETGENERIC", "GETITEM"},
             { "equip armor", "equipArmor"},
@@ -270,6 +279,9 @@ public class StateMachine {
             { "break underneath", "breakBlockUnderneath"},
             { "set radius small", "setRadiusSmall"},
             { "set radius large", "setRadiusLarge"}
+            { "retrieve slot3", "retrieveSlot3"},
+            { "retrieve furnace", "retrieveFurnaceItems"},
+            { "start furnace", "openFurnace"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -279,15 +291,23 @@ public class StateMachine {
             { "get wood", "$" },
             { "get planks", "$" },
             { "start craft", "$" },
-            {"place craft", "$" },
+            { "place craft", "$" },
             { "open inventory", "$" },
             { "close inventory", "$" },
             { "equip armor", "$" },
             { "craft planks", "$" },
             { "place furnace", "$" },
+            { "get obsidian", "$"},
+            { "find obsidian", "$" },
+            { "mine obsidian", "$" },
             { "make portal", "$" },
+            { "goin portal", "$" },
             { "light portal", "$" },
+            { "prepare flint and steel", "$" },
             { "clean inputs", "$" },
+            { "goto water", "$"},
+            { "grab water", "$"},
+            { "get water", "$" }, 
             { "kill blazes", "checkHasItem" },
             { "CRAFTGENERIC", "checkHasItem"},
 
@@ -305,8 +325,8 @@ public class StateMachine {
         // addTask("trade for ender pearls");
         // addTask("get blaze powder");
         // addTask("enter nether");
-        // addTask("build portal");
-        // addTask("get obsidian");
+        addTask("create portal");
+        //addTask("get obsidian");
         // addTask("get diamonds");
         // addTask("get iron");
         // addTask("get stone pickaxe");
@@ -375,7 +395,6 @@ public class StateMachine {
         addTask("CRAFTGENERIC", "oak_planks", "5");
         addTask("open inventory");
         addTask("GETGENERIC","oak_log", "5");
-    
     }
 
     public void setRadiusSmall(){
@@ -458,10 +477,30 @@ public class StateMachine {
 
 
 
+    public void getWater() {
+        the_stack.pop();
+        addTask("clean inputs");
+        addTask("grab water");
+        addTask("goto water");
+    }
+
+    public void getObsidian() {
+        the_stack.pop();
+        addTask("find obsidian");
+        addTask("place water");
+        addTask("clean inputs");
+        addTask("get water");
+        addTask("clean inputs");
+        addTask("mine obsidian");
+        
+    }
+
     public void createPortal() {
         the_stack.pop();
         addTask("clean inputs");
         addTask("light portal");
+        addTask("prepare flint and steel");
+        addTask("goin portal");
         addTask("make portal");
     }
 
@@ -539,6 +578,18 @@ public class StateMachine {
             }
         }
         return 1000;
+    }
+
+    public void retrieveFurnaceItems(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("retrieve slot3");
+        addTask("start furnace");
+    }
+
+    public void retrieveSlot3(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, 2, 0, SlotActionType.QUICK_MOVE, client.player);        
     }
 
     public void prepareFlintAndSteel(){
@@ -636,11 +687,9 @@ public class StateMachine {
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.JUMP, true);
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys(); 
         */
-
-
 
     }
 
@@ -677,6 +726,31 @@ public class StateMachine {
         }
     }
 
+    public void gotoWater() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+
+        //goto water
+        baritone.getGetToBlockProcess().getToBlock(Blocks.WATER);
+
+        //look at water
+        Rotation rotate = new Rotation(0, 90);
+        BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
+
+    }
+
+    public void grabWater() {
+        //right click with bucket
+        if (checkAllHeldItem(Items.BUCKET)) {
+
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+            
+        }
+        //maybe make this better later, maybe toss back onto stack or something?
+    
+    }
+
     public void equipAllArmor(){
         the_stack.pop();
         addTask("close inventory");
@@ -694,6 +768,37 @@ public class StateMachine {
                 client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 1, SlotActionType.QUICK_MOVE, client.player);        
             }
         }
+
+    }
+
+    public void findObsidian() {
+        //doing a really weird obsidian generator
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+
+        //goto ruined portal (hopefully)
+        baritone.getGetToBlockProcess().getToBlock(Blocks.OBSIDIAN);
+    }
+
+    //will follow findObsidian return
+    public void placeWater() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        
+        //look down to place water
+        Rotation rotate = new Rotation(0, 90);
+        BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
+
+        //place water:
+        if (checkAllHeldItem(Items.WATER_BUCKET)) {
+
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+            
+        }
+    }
+
+    public void mineObsidian() {
+        baritone.getMineProcess().mine(28, Blocks.OBSIDIAN);
     }
 
     public void placePortal() {
@@ -714,27 +819,41 @@ public class StateMachine {
         lastPortalPos = portalPos;
 
     }
-    
+
     //NOTE: only works on a portal you've placed immeditaly before. Otherwise, lightPortal will just fail.
+    public void goinPortal() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        //navigate to y + 1 z + 1 location at portalPos
+        BaritoneAPI.getSettings().blocksToDisallowBreaking.value.add(Blocks.OBSIDIAN);
+        Goal newt = new GoalBlock(lastPortalPos.getX(), lastPortalPos.getY() + 1, lastPortalPos.getZ() + 1);
+        //Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
+        BaritoneAPI.getSettings().allowWaterBucketFall.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
+    }
+    
+    
     public void lightPortal() {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
 
         //time to light the portal:
-
-        //navigate to y + 1 z + 1 location at portalPos
-        Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newGoal);
 
         //look down on portal block
         Rotation rotate = new Rotation(0, 90);
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
         
-        // TODO: make compatible with stack and make sure that player has flint and steel in hand.
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
-
+        //reset setting
+        BaritoneAPI.getSettings().allowWaterBucketFall.value = true;
+        BaritoneAPI.getSettings().blocksToDisallowBreaking.value.remove(Blocks.OBSIDIAN);
+        
+        // make sure flint and steel is in hand:
+        if (checkAllHeldItem(Items.FLINT_AND_STEEL)) {
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+            BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+        }
         //don't forget to release keyboard input when stack is implemented
+
+        
     }
 
     public void releaseKeyboard() {
@@ -769,6 +888,19 @@ public class StateMachine {
         }else{
             return false;
         }
+    }
+
+    //used ONLY for right clicks, as it checks both main hand and off-hand
+    private boolean checkAllHeldItem(Item item) {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        Iterable<ItemStack> items = me.getHandItems();
+        for (ItemStack stack : items ) {
+            if (stack.isOf(item)) {
+                return true;
+            }
+        }
+        return false;
+
     }
 
 }
