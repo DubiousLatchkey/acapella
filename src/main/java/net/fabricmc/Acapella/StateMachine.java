@@ -41,10 +41,13 @@ import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 //schematics:
 import baritone.api.schematic.*;
 import baritone.api.process.IBuilderProcess;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.Vec3d;
@@ -289,7 +292,10 @@ public class StateMachine {
             { "set radius large", "setRadiusLarge"},
             { "retrieve slot3", "retrieveSlot3"},
             { "retrieve furnace", "retrieveFurnaceItems"},
-            { "start furnace", "openFurnace"},
+            { "move north", "moveNorthOne"},
+            { "move furnace", "moveFurnaceToPosition5"},
+            { "prepare furnace", "prepareFurnace"},
+            { "look angled", "lookAngled"},
             { "try goto stronghold", "tryGotoStronghold"},
             { "look at eye", "lookAtEye"},
             { "use eye", "useEye"},
@@ -332,6 +338,7 @@ public class StateMachine {
 
     public void ultimateTask(){
         the_stack.pop();
+
         // addTask("kill dragon");
         // addTask("enter end");
         // addTask("activate endportal");
@@ -340,7 +347,7 @@ public class StateMachine {
         // addTask("trade for ender pearls");
         // addTask("get blaze powder");
         // addTask("enter nether");
-        addTask("create portal");
+        // addTask("create portal");
         //addTask("get obsidian");
         // addTask("get diamonds");
         // addTask("get iron");
@@ -354,6 +361,9 @@ public class StateMachine {
         addTask("start furnace");
 
         addTask("place furnace");
+        addTask("prepare furnace");
+        addTask("look angled");
+        addTask("move north");
         // closeAndGrabCraftingTable();
         // addTask("CRAFTGENERIC","furnace","1");
         // placeAndOpenCraftingTable();
@@ -374,13 +384,13 @@ public class StateMachine {
 
         // addTask("GETGENERIC", "stone","20","cobblestone");
 
-        closeAndGrabCraftingTable();
-        addTask("CRAFTGENERIC","wooden_pickaxe","1");
-        addTask("CRAFTGENERIC","stick","3");
-        placeAndOpenCraftingTable();
+        // closeAndGrabCraftingTable();
+        // addTask("CRAFTGENERIC","wooden_pickaxe","1");
+        // addTask("CRAFTGENERIC","stick","3");
+        // placeAndOpenCraftingTable();
 
         
-        addTask("get planks");
+        // addTask("get planks");
         
         
         
@@ -614,10 +624,24 @@ public class StateMachine {
         addTask("open inventory");
     }
 
+    public void prepareFurnace(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("move furnace");
+        addTask("open inventory");
+    }
+
     public void moveFlintAndSteelToPosition4(){
         MinecraftClient client = MinecraftClient.getInstance();
         int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FLINT_AND_STEEL));
         swapSlots(slot, 39);
+    }
+
+    public void moveFurnaceToPosition5(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FURNACE));
+        swapSlots(slot, 41);
+        me.getInventory().selectedSlot = 5;
     }
 
     public void swapSlots (int slot1, int slot2){
@@ -708,37 +732,67 @@ public class StateMachine {
 
     }
 
+    public void moveNorthOne(){
+        BlockPos my_pos = me.getBlockPos();
+
+        Goal newt = new GoalBlock(my_pos.getX(), my_pos.getY(), my_pos.getZ() - 1);
+        //Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
+        BaritoneAPI.getSettings().allowWaterBucketFall.value = false;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
+        
+    }
+    
+    public void lookAngled(){
+        BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
+        Rotation rotate = new Rotation(0, 40);
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
+
+    }
+
     public void placeFurnace() {
-        // BlockPos playerPos = BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext().playerFeet();
-
-        // // Calculate the position where you want to place the block
-        // // BlockPos targetPos = playerPos.down(); // Example: Place a block above the player
-
-        // // Place the block using Baritone
-        // BaritoneAPI.getProvider().getPrimaryBaritone().getBuilderProcess().build("furnace", playerPos);
-
-        
-        BaritoneAPI.getSettings().buildIgnoreDirection.value = true;
-        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing=north");
-        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("lit");
-        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing");
-        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("list=false");
-        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("[facing=north,lit=false]");
+ 
         
 
-        LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.toString());
-        LOGGER.info(BaritoneAPI.getSettings().buildIgnoreProperties.toString());
+        // Check if the hit result is a block
+        
+        
+        HitResult hitResult = mc.crosshairTarget;
+        if (hitResult.getType() == BlockHitResult.Type.BLOCK) {
+            // Get the block position from the hit result
+            Vec3d targetPos = hitResult.getPos();
+            Vec3d my_pos = me.getPos();
+            double dist = targetPos.distanceTo(my_pos);
 
+            me.sendMessage(Text.literal("the distance that was calculated is: " + dist));
+            if(dist > 0.6 && dist < 4)
+            if (checkAllHeldItem(Items.FURNACE)) {
+                BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+                BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+            }
 
-        ClientPlayerEntity me = MinecraftClient.getInstance().player;
-        BlockPos craftingPos = me.getBlockPos();
-
-        BaritoneAPI.getSettings().allowInventory.value = true;
-        Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("furnace.schem", craftingPos);
-
-        if (!out) {
-            me.sendMessage(Text.literal("failed to place furnace"));
         }
+
+        // BaritoneAPI.getSettings().buildIgnoreDirection.value = true;
+        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing=north");
+        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("lit");
+        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing");
+        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("list=false");
+        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("[facing=north,lit=false]");
+        
+
+        // LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.toString());
+        // LOGGER.info(BaritoneAPI.getSettings().buildIgnoreProperties.toString());
+
+
+        // ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        // BlockPos craftingPos = me.getBlockPos();
+
+        // BaritoneAPI.getSettings().allowInventory.value = true;
+        // Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("furnace.schem", craftingPos);
+
+        // if (!out) {
+        //     me.sendMessage(Text.literal("failed to place furnace"));
+        // }
     }
 
     public void gotoWater() {
