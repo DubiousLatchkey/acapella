@@ -323,7 +323,7 @@ public class StateMachine {
             { "idle 1", "idle1"},
             { "use furnace with iron", "furnaceIron"},
             { "start furnace", "openFurnace"},
-            { "idle custom", "idleCustom"}
+            { "idle custom", "idleCustom"},
             {"fill frames", "fillFrames"},
             {"fill frame data", "fillFrameData"},
             {"goto center of frames", "gotoCenterOfFrames"},
