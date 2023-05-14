@@ -24,6 +24,7 @@ import baritone.api.IBaritone;
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ArmorItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -251,6 +252,9 @@ public class StateMachine {
             { "light portal", "lightPortal"},
             { "clean inputs", "releaseKeyboard"},
             { "CRAFTGENERIC", "CRAFTRECIPE"},
+            { "equip armor", "equipArmor"},
+            { "equip all armor", "equipAllArmor"},
+
 
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -263,6 +267,8 @@ public class StateMachine {
             { "start craft", "$" },
             {"place craft", "$" },
             { "open inventory", "$" },
+            { "close inventory", "$" },
+            { "equip armor", "$" },
             { "craft planks", "$" },
             { "place furnace", "$" },
             { "make portal", "$" },
@@ -387,7 +393,7 @@ public class StateMachine {
         recipe.ifPresent(rec ->
             client.interactionManager.clickRecipe(client.player.currentScreenHandler.syncId, (Recipe<?>)rec, false)
         );
-
+        
         InventoryHelper.scheduleCraft();
     }
 
@@ -508,6 +514,25 @@ public class StateMachine {
 
         if (!out) {
             me.sendMessage(Text.literal("failed to place furnace"));
+        }
+    }
+
+    public void equipAllArmor(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("equip armor");
+        addTask("open inventory");
+    }
+
+    public void equipArmor(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        PlayerInventory inventory = client.player.getInventory();
+
+        for (int i = 0; i < inventory.size(); i++){
+            if( inventory.getStack(i).getItem() instanceof ArmorItem ){
+                
+                client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 1, SlotActionType.QUICK_MOVE, client.player);        
+            }
         }
     }
 
