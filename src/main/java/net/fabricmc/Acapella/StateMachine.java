@@ -126,7 +126,9 @@ public class StateMachine {
         if(currTaskName == "$"){
             me.sendMessage(Text.literal("Starting new task: " + the_stack.peek().task));
             currTaskName = the_stack.peek().task;
+            LOGGER.info("before Debug Statement");
             initiate_task(the_stack.peek());
+            LOGGER.info("Debug Statement");
             return;
         }
         //CHECK CURRENT TASK IS DONE YET
@@ -224,7 +226,9 @@ public class StateMachine {
             { "open inventory", "openInventory"},
             { "place furnace", "placeFurnace"},
             { "make portal", "placePortal"},
-            { "light portal", "lightPortal"}
+            { "light portal", "lightPortal"},
+            { "craft planks", "craftWoodPlanks"},
+            { "clean inputs", "releaseKeyboard"}
 
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -232,11 +236,15 @@ public class StateMachine {
         conditions = Stream.of(new String[][] {
             { "start", "none" }, 
             { "get wood", "$" },
-            { "get planks", "$"},
-            { "start craft", "$"},
-            {"place craft", "$"},
-            { "open inventory", "$"},
-            { "craft planks", "$"}  
+            { "get planks", "$" },
+            { "start craft", "$" },
+            {"place craft", "$" },
+            { "open inventory", "$" },
+            { "craft planks", "$" },
+            { "place furnace", "$" },
+            { "make portal", "$" },
+            { "light portal", "$" },
+            { "clean inputs", "$" } 
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
 
@@ -245,7 +253,6 @@ public class StateMachine {
         addTask("craft planks");
         addTask("open inventory");
         addTask("get wood");
-
     }
 
     public void getWood(){
@@ -257,9 +264,15 @@ public class StateMachine {
         getMaterial(Blocks.DIRT);
     }
 
+    public void mineStone() {
+        getMaterial(Blocks.STONE);
+    }
+
     public void createPortal() {
         the_stack.pop();
-        //addTask();
+        addTask("clean inputs");
+        addTask("light portal");
+        addTask("make portal");
     }
 
 
@@ -365,6 +378,10 @@ public class StateMachine {
     public void craftWoodPlanks(){
         craftItem(Blocks.OAK_PLANKS.asItem());
     }
+
+    public void craftFurnace(){
+        craftItem(Blocks.FURNACE.asItem());
+    }
   
     public void placeCraftingTable(){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
@@ -442,6 +459,11 @@ public class StateMachine {
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
 
         //don't forget to release keyboard input when stack is implemented
+    }
+
+    public void releaseKeyboard() {
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
     }
 
     public boolean checkHasItem(List<String> args){
