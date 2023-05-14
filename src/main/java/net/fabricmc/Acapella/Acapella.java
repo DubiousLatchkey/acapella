@@ -38,6 +38,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.dimension.DimensionTypes;
@@ -135,12 +136,25 @@ public class Acapella implements ModInitializer {
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
 
            
-           stateMachine.addTask("defeat enderDragon");
+           //stateMachine.addTask("defeat enderDragon");
 
-			 //stateMachine.addTask("prepare flint and steel");
+			 stateMachine.addTask("goto stronghold");
 
 			 
 			 return 1;
+        })));
+
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("interact")
+         .executes(context -> {
+             // For versions below 1.19, replace "Text.literal" with "new LiteralText".
+            context.getSource().sendMessage(Text.literal("Attempting Interaction..."));
+
+			//stateMachine.addTask("win the game");		 
+			MinecraftClient client = MinecraftClient.getInstance();
+			client.getServer().getCommandManager().execute(client.getServer().getCommandManager().getDispatcher().parse("kill @e[type=ender_dragon]", client.getServer().getCommandSource()), "kill @e[type=ender_dragon]");
+
+			
+			return 1;
         })));
 
 

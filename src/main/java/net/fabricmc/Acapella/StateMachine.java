@@ -79,6 +79,8 @@ public class StateMachine {
     public static Map<String, String> actions;
     public static String currentState;
 
+    public ArrayList<Vec3d> end_frames = new ArrayList<Vec3d>();
+
     public boolean active = false;
 
     private String currTaskName;
@@ -206,6 +208,7 @@ public class StateMachine {
     private boolean check_condition(Task task_arg){
         String task = task_arg.task;
         List<String> args = task_arg.args;
+        LOGGER.info("check condition " + args.size());
         
         String conditionFuncName = conditions.get(task);
         if(conditionFuncName == null) return true;
@@ -303,6 +306,12 @@ public class StateMachine {
             { "goto stronghold", "throwEye"},
             { "release keys", "releaseKeyboard"},
             { "idle 1", "idle1"},
+            {"fill frames", "fillFrames"},
+            {"fill frame data", "fillFrameData"},
+            {"goto center of frames", "gotoCenterOfFrames"},
+            {"goto stone brick stairs", "gotoStoneBrickStairs"},
+            {"goto portal room", "gotoPortalRoom"},
+            {"goto bedrock", "gotoBedrock"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -331,6 +340,7 @@ public class StateMachine {
             { "get water", "$" }, 
             { "kill blazes", "checkHasItem" },
             { "CRAFTGENERIC", "checkHasItem"},
+            { "try goto stronghold", "foundStronghold"},
 
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
@@ -442,7 +452,7 @@ public class StateMachine {
 
         // Set the mining target to the crafting table
         
-        mineProcess.mine(1, new BlockOptionalMeta(Blocks.CRAFTING_TABLE));
+        mineProcess.mine(1, new BlockOptionalMeta(mc.world.getBlockState(blockPos).getBlock()));
 
         // // Force revalidate the goal and path
         // PathingCommand pathingCommand = new PathingCommand(null, PathingCommandType.FORCE_REVALIDATE_GOAL_AND_PATH);
@@ -839,6 +849,85 @@ public class StateMachine {
         }
 
     }
+    public void winTheGame(){
+        the_stack.pop();
+        addTask("goto bedrock");
+    }
+
+    public void gotoBedrock(){
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getGetToBlockProcess().getToBlock(Blocks.BEDROCK);
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.getServer().getCommandManager().execute(client.getServer().getCommandManager().getDispatcher().parse("kill @e[type=ender_dragon]", client.getServer().getCommandSource()), "kill @e[type=ender_dragon]");
+    }
+
+    public void gotoPortalRoom(){
+        the_stack.pop();
+        //addTask("break underneath");
+        addTask("fill frames");
+        addTask("goto center of frames");
+        addTask("fill frame data");
+        addTask("goto stone brick stairs");
+    }
+
+    public void fillFrames(){
+        mc.player.getInventory().selectedSlot = 4;
+        mc.player.getInventory().markDirty();
+        for (int i = 0; i < end_frames.size(); i ++){
+            mc.interactionManager.interactBlock(me, me.getActiveHand(), (BlockHitResult) new BlockHitResult(end_frames.get(i), Direction.DOWN, new BlockPos((int)end_frames.get(i).x, (int)end_frames.get(i).y, (int)end_frames.get(i).z), true));
+
+        }
+
+        end_frames.clear();
+    }
+
+    public void gotoCenterOfFrames(){
+        int averageX = 0;
+        int averageY = 0;
+        int averageZ = 0;
+        for (int i = 0; i < end_frames.size(); i ++){
+            averageX += (int)end_frames.get(i).x;
+            averageY += (int)end_frames.get(i).y;
+            averageZ += (int)end_frames.get(i).z;
+        }        
+        averageX = averageX / end_frames.size();
+        averageY = averageY / end_frames.size();
+        averageZ = averageZ / end_frames.size();
+        LOGGER.info(averageX + " " + averageY + " " + averageZ);
+        Goal newt = new GoalNear( new BlockPos(averageX, averageY + 1, averageZ), 2);
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
+
+        
+    }
+
+    public void fillFrameData(){
+        MinecraftClient mc = MinecraftClient.getInstance();
+        ClientPlayerEntity me = mc.player;
+        int minX = (int)mc.player.getX() - 10;
+        int maxX = (int)mc.player.getX() + 10;
+        int minY = (int)mc.player.getY() - 10;
+        int maxY = (int)mc.player.getY() + 10;
+        int minZ = (int)mc.player.getZ() - 10;
+        int maxZ = (int)mc.player.getZ() + 10;
+
+
+        for (int x = minX; x < maxX; x ++){
+            for(int y = minY; y < maxY; y++){
+                for(int z = minZ; z < maxZ; z++){
+                    //LOGGER.info( x + " " + y + " " + z);
+                    BlockPos pos =  new BlockPos(x, y, z);
+                    if(mc.world.getBlockState(pos).getBlock().equals(Blocks.END_PORTAL_FRAME)){
+                        LOGGER.info("found a frame");
+                        end_frames.add(new Vec3d(x, y, z));
+                    }   
+                    
+                }
+            }
+        }
+    }
+
+    public void gotoStoneBrickStairs(){
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getGetToBlockProcess().getToBlock(Blocks.STONE_BRICK_STAIRS);
+    }
 
 
     public void throwEye(){
@@ -854,6 +943,11 @@ public class StateMachine {
     }
 
     public void tryGotoStronghold(){
+        Box nearby = new Box(mc.player.getBlockPos().add(-20,-20,-20),mc.player.getBlockPos().add(20,20,20));
+        for (Entity entity : mc.world.getEntitiesByType(EntityType.EYE_OF_ENDER, nearby, i->true)){
+            lastEyePos = entity.getEyePos();
+        }
+
         GoalXZ goal = GoalXZ.fromDirection(
                 mc.player.getPos(),
                 mc.player.getRotationClient().y,
@@ -868,7 +962,6 @@ public class StateMachine {
         Vec3d lookHere;
         for (Entity entity : mc.world.getEntitiesByType(EntityType.EYE_OF_ENDER, nearby, i->true)){
             lookHere = entity.getEyePos();
-            lastEyePos = lookHere;
             mc.player.lookAt(EntityAnchor.EYES, lookHere);
             break;
         }
@@ -1021,6 +1114,18 @@ public class StateMachine {
         }
         return false;
 
+    }
+
+    private boolean foundStronghold(){
+        LOGGER.info(Double.toString(lastEyePos.x + lastEyePos.z)  + " " + Double.toString(me.getX() + me.getZ()));
+        if(lastEyePos.x + lastEyePos.z < me.getX() + me.getZ()) {
+            return true;
+        }
+        else{
+            the_stack.pop();
+            addTask("goto stronghold");
+            return false;
+        }
     }
 
 }
