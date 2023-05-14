@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Stack;
@@ -27,7 +28,11 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.network.message.MessageType;
+import net.minecraft.recipe.Recipe;
+import net.minecraft.recipe.RecipeManager;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 @Mixin(ClientPlayerEntity.class)
 public class StateMachine {
@@ -68,7 +73,9 @@ public class StateMachine {
         actions = Stream.of(new String[][] {
         { "start", "none" }, 
         { "get wood", "getWood" },
-        { "get grass", "getGrass"} 
+        { "get planks", "getPlanks"},
+        { "start craft", "openCraftingTable"},
+        { "craft planks", "craftWoodPlanks"}  
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
 
@@ -91,7 +98,7 @@ public class StateMachine {
 
         the_stack.push(new Task<String, List<String>>(state,args));
         active = true;
-
+        currTaskName = "$";
     }
 
     
@@ -157,6 +164,13 @@ public class StateMachine {
         return false;
     }
     
+    public void getPlanks(){
+        the_stack.pop();
+        addTask("craft planks");
+        addTask("start craft");
+        addTask("get wood");
+    }
+
     public void getWood(){
         getMaterial(Blocks.OAK_LOG);
     }
@@ -174,9 +188,6 @@ public class StateMachine {
         LOGGER.info("Getting " + block.getName() );
         baritone.getMineProcess().mine(5, block);
         
-        
-    
-    
     
     }
 
@@ -186,5 +197,28 @@ public class StateMachine {
         the_stack = new Stack<>();
         the_stack.push(new Task<String, List<String>>("$"));
     }
+
+    public void openCraftingTable(){
+        baritone.getGetToBlockProcess().getToBlock(Blocks.CRAFTING_TABLE);
+    }
+
+    public void craftItem(Item item){
+        Identifier id = Registries.ITEM.getId(item);
+        MinecraftClient client = MinecraftClient.getInstance();
+        RecipeManager recipeManager = client.world.getRecipeManager();
+        Optional<?> recipe = recipeManager.get(id);
+        recipe.ifPresent(rec -> LOGGER.info( ((Recipe<?>)rec).toString()) );
+        recipe.ifPresent(rec ->
+            client.interactionManager.clickRecipe(client.player.currentScreenHandler.syncId, (Recipe<?>)rec, false)
+        );
+
+        InventoryHelper.scheduleCraft();
+    }
+    
+
+    public void craftWoodPlanks(){
+        craftItem(Blocks.OAK_PLANKS.asItem());
+    }
+
     
 }

@@ -38,14 +38,15 @@ public class Acapella implements ModInitializer {
 
 		LOGGER.info("Beat Mincecraft");
 		stateMachine = new StateMachine();
+		InventoryHelper.init();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("beatMinecraft")
          .executes(context -> {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
              
-			 stateMachine.addTask("get grass");
-			 stateMachine.addTask("get wood");
+			 stateMachine.addTask("get planks");
+			 //stateMachine.addTask("get wood");
 			 
 			 return 1;
         })));
