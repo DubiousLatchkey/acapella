@@ -37,53 +37,40 @@ import net.minecraft.util.Identifier;
 @Mixin(ClientPlayerEntity.class)
 public class StateMachine {
     public static final Logger LOGGER = LoggerFactory.getLogger("modid");
-    public static Map<String, String> states;
+    public static Map<String, String> conditions;
     public static Map<String, String> actions;
     public static String currentState;
     public boolean active = false;
 
     private String currTaskName;
 
-    public class Task<A, B>{
-        public A task;
-        public B args;
-        public Task(A s){
+    public class Task{
+        public String task;
+        public List<String> args;
+        public Task(String s){
             task = s;
             args = null;
         }
-        public Task(A a, B b){
+        public Task(String a, List<String> b){
             task = a;
             args = b;
         }
     };
 
 
-    private Stack<Task<String,List<String>>> the_stack;
+    private Stack<Task> the_stack;
     
     private MinecraftClient mc;
     private ClientPlayerEntity me;
     private IBaritone baritone;
     
     
-    static {
-        states = Stream.of(new String[][] {
-            { "start", "get wood" }, 
-            { "get wood", "end" }, 
-          }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-        actions = Stream.of(new String[][] {
-        { "start", "none" }, 
-        { "get wood", "getWood" },
-        { "get planks", "getPlanks"},
-        { "start craft", "openCraftingTable"},
-        { "craft planks", "craftWoodPlanks"}  
-        }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-    }
 
     public StateMachine(){
         active = false;
         currTaskName = "$";
         the_stack = new Stack<>();
-        the_stack.push(new Task<String, List<String>>("$"));
+        the_stack.push(new Task("$"));
     }
 
     public void addTask(String state, String... values){
@@ -96,7 +83,7 @@ public class StateMachine {
             args.add(v);
         }
 
-        the_stack.push(new Task<String, List<String>>(state,args));
+        the_stack.push(new Task(state,args));
         active = true;
         currTaskName = "$";
     }
@@ -119,6 +106,7 @@ public class StateMachine {
         //CHECK CURRENT TASK IS DONE YET
         //check if baritone is active
         if(checkBaritoneActive()) return;
+        if(!check_condition(the_stack.peek())) return; //returns if the condition is false
         
         the_stack.pop();
         currTaskName = "$";
@@ -129,7 +117,7 @@ public class StateMachine {
         }        
     }
 
-    private void initiate_task(Task<String,List<String>> task_arg){
+    private void initiate_task(Task task_arg){
         //make this work with Task<>
         String task = task_arg.task;
         List<String> args = task_arg.args;
@@ -138,18 +126,53 @@ public class StateMachine {
             Method method = this.getClass().getDeclaredMethod( actions.get(task)) ;
             method.setAccessible(true);
             try{
-                Object o = method.invoke(this);
+                if(args == null){
+                    Object o = method.invoke(this);
+                }else{
+                    Object o = method.invoke(this,args);
+                }
             } catch(IllegalAccessException e){
-                LOGGER.info("No accessing that from here");
+                LOGGER.info("initiate_task: No accessing that from here");
             } catch (InvocationTargetException e){
-                LOGGER.info("What are you invoking from anyway?");
+                LOGGER.info("initiate_task: What are you invoking from anyway?");
             } catch (Exception e){
-                LOGGER.info(e.toString());
+                LOGGER.info("initiate_task: " + e.toString());
             }
         } catch(NoSuchMethodException e){
-            LOGGER.info("No method found");
+            LOGGER.info("initiate_task: No method found");
+        }
+    }
+
+    private boolean check_condition(Task task_arg){
+        String task = task_arg.task;
+        List<String> args = task_arg.args;
+        
+        String condition = conditions.get(task);
+        if(condition == "$") return true;
+        try{
+            Method method = this.getClass().getDeclaredMethod( conditions.get(task)) ;
+            method.setAccessible(true);
+
+            try{
+                Object o;
+                if(args == null){
+                    o = method.invoke(this);
+                }else{
+                    o = method.invoke(this,args);
+                }
+                return (boolean)o;
+            } catch(IllegalAccessException e){
+                LOGGER.info("initiate_task: No accessing that from here");
+            } catch (InvocationTargetException e){
+                LOGGER.info("initiate_task: What are you invoking from anyway?");
+            } catch (Exception e){
+                LOGGER.info("initiate_task: " + e.toString());
+            }
+        } catch(NoSuchMethodException e){
+            LOGGER.info("initiate_task: No method found");
         }
 
+        return false;
     }
 
 
@@ -163,7 +186,26 @@ public class StateMachine {
         if(baritone.getGetToBlockProcess().isActive()) return true;
         return false;
     }
-    
+
+    static {
+        actions = Stream.of(new String[][] {
+            { "start", "none" }, 
+            { "get wood", "getWood" },
+            { "get planks", "getPlanks"},
+            { "start craft", "openCraftingTable"},
+            { "craft planks", "craftWoodPlanks"}  
+        }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
+
+
+        conditions = Stream.of(new String[][] {
+            { "start", "none" }, 
+            { "get wood", "$" },
+            { "get planks", "$"},
+            { "start craft", "$"},
+            { "craft planks", "$"}  
+          }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
+    }
+
     public void getPlanks(){
         the_stack.pop();
         addTask("craft planks");
@@ -195,7 +237,7 @@ public class StateMachine {
         active = false;
         currTaskName = "$";
         the_stack = new Stack<>();
-        the_stack.push(new Task<String, List<String>>("$"));
+        the_stack.push(new Task("$"));
     }
 
     public void openCraftingTable(){
