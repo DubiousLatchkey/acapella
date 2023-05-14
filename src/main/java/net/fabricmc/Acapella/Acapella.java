@@ -87,6 +87,9 @@ public class Acapella implements ModInitializer {
 
 		if (!Files.exists(craftingTo)) {
 			try {
+				if (!Files.exists(craftingPath)) {
+					System.err.println("Failed to copy from crafting table schematic");
+				}
 				Files.createFile(craftingTo);
 				Files.copy(craftingPath, craftingTo, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
@@ -95,6 +98,9 @@ public class Acapella implements ModInitializer {
 		}
 		if (!Files.exists(furnaceTo)) {
 			try {
+				if (!Files.exists(furnacePath)) {
+					System.err.println("Failed to copy from furnace schematic");
+				}
 				Files.createFile(furnaceTo);
 				Files.copy(furnacePath, furnaceTo, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
@@ -103,6 +109,9 @@ public class Acapella implements ModInitializer {
 		}
 		if (!Files.exists(portalTo)) {
 			try {
+				if (!Files.exists(portalPath)) {
+					System.err.println("Failed to copy from portal schematic");
+				}
 				Files.createFile(portalTo);
 				Files.copy(portalPath, portalTo, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
