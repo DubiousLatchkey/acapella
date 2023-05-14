@@ -34,8 +34,13 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Box;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.dimension.DimensionTypes;
 import net.minecraft.block.Blocks;
 
 
@@ -128,8 +133,10 @@ public class Acapella implements ModInitializer {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
              
+
 			 stateMachine.addTask("defeat enderDragon");
-			 //stateMachine.addTask("get wood");
+			 //stateMachine.addTask("prepare flint and steel");
+
 			 
 			 return 1;
         })));
@@ -180,6 +187,7 @@ public class Acapella implements ModInitializer {
 			return 1;
 		})));
 
+		// Stay Alive Behaviors
 		ClientTickEvents.START_CLIENT_TICK.register(mc -> {
 			// if (mc.player != null
 			// 				&& mc.player.getAttackCooldownProgress(0) >= 1) {
@@ -190,54 +198,73 @@ public class Acapella implements ModInitializer {
 			// 		}
 			// 	}
 			// }
-			if (mc.world != null && mc.world.getTime() % 15 == 0) {
-				Box nearby = new Box(mc.player.getBlockPos().add(-6,-6,-6),mc.player.getBlockPos().add(6,6,6));
-				List<Entity> entities = new ArrayList<Entity>();
-
-
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.ZOMBIE, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.SKELETON, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.SPIDER, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.SILVERFISH, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.ENDERMAN, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.CAVE_SPIDER, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.PIG, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.COW, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-				for (Entity entity : mc.world.getEntitiesByType(EntityType.BLAZE, nearby, i->true)){
-					LOGGER.info(entity.getEntityName());
-					entities.add( entity);
-				}
-
-
-				entities.forEach(entity -> {
-					if (entity.isAttackable()){
-						mc.interactionManager.attackEntity(mc.player, entity);
+			if(mc.world != null && mc.player.getHungerManager().isNotFull()){
+				//Eat
+				PlayerInventory inventory = mc.player.getInventory();
+				for (int i = 0; i < inventory.size();i++){
+					ItemStack stack = inventory.getStack(i);
+					if(stack.isFood()){
+						mc.player.eatFood(mc.world, stack);
+						break;
 					}
-				});
+				}
+			}
+			else{
+				if (mc.world != null && mc.world.getTime() % 15 == 0) {
+					Box nearby = new Box(mc.player.getBlockPos().add(-6,-6,-6),mc.player.getBlockPos().add(6,6,6));
+					List<Entity> entities = new ArrayList<Entity>();
+
+
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.ZOMBIE, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.SKELETON, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.SPIDER, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.SILVERFISH, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					if(mc.world.getDimensionKey() != DimensionTypes.THE_END){
+						for (Entity entity : mc.world.getEntitiesByType(EntityType.ENDERMAN, nearby, i->true)){
+							LOGGER.info(entity.getEntityName());
+							entities.add( entity);
+						}
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.CAVE_SPIDER, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.PIG, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.COW, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.BLAZE, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.HOGLIN, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+
+
+					entities.forEach(entity -> {
+						if (entity.isAttackable()){
+							mc.interactionManager.attackEntity(mc.player, entity);
+						}
+					});
+				}
 			}
 		});
 		

@@ -23,7 +23,10 @@ import baritone.api.IBaritone;
 
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ArmorItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -127,9 +130,7 @@ public class StateMachine {
         if(currTaskName == "$"){
             me.sendMessage(Text.literal("Starting new task: " + the_stack.peek().task));
             currTaskName = the_stack.peek().task;
-            LOGGER.info("before Debug Statement");
             initiate_task(the_stack.peek());
-            LOGGER.info("Debug Statement");
             return;
         }
         //CHECK CURRENT TASK IS DONE YET
@@ -158,9 +159,16 @@ public class StateMachine {
             clearStack();
             return;
         }
-        try{
-            Method method = this.getClass().getDeclaredMethod( actions.get(task)) ;
 
+         
+        try{
+            Method method;
+            if(args == null || args.size() == 0){
+                method = this.getClass().getDeclaredMethod( actions.get(task)) ;
+            }else{
+                method = this.getClass().getDeclaredMethod( actions.get(task), List.class) ;
+            }
+            
             method.setAccessible(true);
             try{
                 if(args == null || args.size() == 0){
@@ -184,11 +192,16 @@ public class StateMachine {
         String task = task_arg.task;
         List<String> args = task_arg.args;
         
-        String condition = conditions.get(task);
-        if(condition == null) return true;
-        if(condition == "$") return true;
+        String conditionFuncName = conditions.get(task);
+        if(conditionFuncName == null) return true;
+        if(conditionFuncName == "$") return true;
         try{
-            Method method = this.getClass().getDeclaredMethod( condition) ;
+            Method method;
+            if(args == null || args.size() == 0){
+                method = this.getClass().getDeclaredMethod( conditionFuncName) ;
+            }else{
+                method = this.getClass().getDeclaredMethod( conditionFuncName, List.class) ;
+            }
             method.setAccessible(true);
 
             try{
@@ -245,7 +258,16 @@ public class StateMachine {
             { "clean inputs", "releaseKeyboard"},
             { "goto water", "gotoWater"},
             { "grab water", "grabWater"},
-            { "get water", "getWater"}
+            { "get water", "getWater"},
+            { "CRAFTGENERIC", "CRAFTRECIPE"},
+            { "equip armor", "equipArmor"},
+            { "equip all armor", "equipAllArmor"},
+            { "farm blazes", "farmBlazes"},
+            { "kill blazes", "killBlazes"},
+            { "goto nether fence", "gotoNetherBrickFence"},
+            { "goto spawner", "gotoSpawner"},
+            { "prepare flint and steel", "prepareFlintAndSteel"},
+            { "move flint and steel", "moveFlintAndSteelToPosition4"},
 
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -258,6 +280,8 @@ public class StateMachine {
             { "start craft", "$" },
             { "place craft", "$" },
             { "open inventory", "$" },
+            { "close inventory", "$" },
+            { "equip armor", "$" },
             { "craft planks", "$" },
             { "close inventory", "$"},
             { "place furnace", "$" },
@@ -268,6 +292,8 @@ public class StateMachine {
             { "goto water", "$"},
             { "grab water", "$"},
             { "get water", "$" } 
+            { "kill blazes", "checkHasItem" },
+            { "CRAFTGENERIC", "checkHasItem"},
 
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
@@ -289,10 +315,14 @@ public class StateMachine {
         // addTask("get iron");
         // addTask("get stone pickaxe");
         // addTask("get wood pickaxe");
-        //addTask("place craft");
         //addTask("craft craft");
-        //addTask("get planks");
         //addTask("get water");
+        addTask("place craft");
+        addTask("close inventory");
+        addTask("CRAFTGENERIC", "crafting_table", "1");
+        addTask("open inventory");
+        addTask("get planks");
+
 
 
     }
@@ -300,19 +330,23 @@ public class StateMachine {
 
 
 
-    // public void CRAFTRECIPE(List<String> args){
-    //     Identifier my_item = Identifier.tryParse(args.get(0));
-    //     int number;
-    //     try {
-    //         number = Integer.parseInt(args.get(1));
-    //     } catch (NumberFormatException e) {
-    //         LOGGER.info("Invalid number format: " + args.get(1));
-    //         number = 5;
-    //     }
-    // }
+    public void CRAFTRECIPE(List<String> args){
+        Identifier my_item = Identifier.tryParse(args.get(0));
+        int number;
+        
+        try {
+            number = Integer.parseInt(args.get(1));
+        } catch (NumberFormatException e) {
+            LOGGER.info("Invalid number format: " + args.get(1));
+            number = 5;
+        }
+        Item actual_item = Registries.ITEM.get(my_item);
+        craftItem(actual_item);
+    }
 
     public void getPlanks(){
         the_stack.pop();
+        addTask("close inventory");
         addTask("craft planks");
         addTask("open inventory");
         addTask("get wood");
@@ -384,11 +418,11 @@ public class StateMachine {
         MinecraftClient client = MinecraftClient.getInstance();
         RecipeManager recipeManager = client.world.getRecipeManager();
         Optional<?> recipe = recipeManager.get(id);
-        recipe.ifPresent(rec -> LOGGER.info( ((Recipe<?>)rec).toString()) );
+        // recipe.ifPresent(rec -> LOGGER.info( ((Recipe<?>)rec).toString()) );
         recipe.ifPresent(rec ->
             client.interactionManager.clickRecipe(client.player.currentScreenHandler.syncId, (Recipe<?>)rec, false)
         );
-
+        
         InventoryHelper.scheduleCraft();
     }
 
@@ -426,23 +460,64 @@ public class StateMachine {
         return 1000;
     }
 
+    public void prepareFlintAndSteel(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("move flint and steel");
+        addTask("open inventory");
+    }
+
+    public void moveFlintAndSteelToPosition4(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FLINT_AND_STEEL));
+        swapSlots(slot, 39);
+    }
+
+    public void swapSlots (int slot1, int slot2){
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, me);
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot2, 0, SlotActionType.PICKUP, me);
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, me);
+    }
+
     public int findItemStack(PlayerInventory inventory, Identifier id) {
         for (int i = 0; i < inventory.size(); i++) {
             ItemStack stack = inventory.getStack(i);
             
-            if (Registries.ITEM.getId(stack.getItem()) == id) {
+            if (stack.getItem() == Registries.ITEM.get(id)) {
                 return i;
             }
         }
         
         return 1000; 
     }
+
+    public void farmBlazes(){
+        the_stack.pop();
+        addTask("kill blazes", "minecraft:blaze_rod", "7");
+        addTask("goto spawner");
+        addTask("goto nether fence");
+
+    }
+
+    public void gotoNetherBrickFence(){
+        baritone.getGetToBlockProcess().getToBlock(Blocks.NETHER_BRICK_FENCE);
+    }
+
+    public void gotoSpawner(){
+        baritone.getGetToBlockProcess().getToBlock(Blocks.SPAWNER);
+    }
+
+    public void killBlazes(List<String> args){
+        baritone.getFollowProcess().follow(i -> i.getType() ==  EntityType.BLAZE);
+    }
+
     public List<ItemStack> getStacksOfItem(PlayerInventory inventory, Identifier id) {
         List<ItemStack> items = new ArrayList<>();
         for (int i = 0; i < inventory.size(); i++) {
             ItemStack stack = inventory.getStack(i);
-            
-            if (Registries.ITEM.getId(stack.getItem()) == id) {
+            if (stack.getItem() == Registries.ITEM.get(id)) {
                 items.add(stack);
             }
         }
@@ -455,7 +530,7 @@ public class StateMachine {
         for (int i = 0; i < inventory.size(); i++) {
             ItemStack stack = inventory.getStack(i);
             
-            if (Registries.ITEM.getId(stack.getItem()) == id) {
+            if (stack.getItem() == Registries.ITEM.get(id)) {
                 count += stack.getCount();
             }
         }
@@ -533,6 +608,25 @@ public class StateMachine {
             
         }
         //maybe make this better later, maybe toss back onto stack or something?
+
+    public void equipAllArmor(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("equip armor");
+        addTask("open inventory");
+    }
+
+    public void equipArmor(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        PlayerInventory inventory = client.player.getInventory();
+
+        for (int i = 0; i < inventory.size(); i++){
+            if( inventory.getStack(i).getItem() instanceof ArmorItem ){
+                
+                client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 1, SlotActionType.QUICK_MOVE, client.player);        
+            }
+        }
+
     }
 
     public void placePortal() {
@@ -605,8 +699,8 @@ public class StateMachine {
             LOGGER.info("Invalid number format: " + args.get(1));
             return false;
         }
-        LOGGER.info(my_item.toString());
-        LOGGER.info("Number: " + number);
+        // LOGGER.info(my_item.toString());
+        // LOGGER.info("Number: " + number);
 
         PlayerInventory inv = me.getInventory();
         List<ItemStack> stacks = getStacksOfItem(inv,my_item);
@@ -614,6 +708,8 @@ public class StateMachine {
         for(ItemStack s: stacks){
             count += s.getCount();
         }
+        // LOGGER.info(stacks.toString());
+        // LOGGER.info("The number of items of TYPE that we have is: " + count);
 
         if(count >= number) {
             return true;
