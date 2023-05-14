@@ -235,11 +235,12 @@ public class StateMachine {
             { "place craft", "placeCraftingTable"},
             { "start craft", "openCraftingTable"},
             { "open inventory", "openInventory"},
+            { "close inventory", "closeScreen"},
             { "place furnace", "placeFurnace"},
             { "make portal", "placePortal"},
             { "light portal", "lightPortal"},
             { "craft planks", "craftWoodPlanks"},
-            { "clean inputs", "releaseKeyboard"}
+            { "clean inputs", "releaseKeyboard"},
 
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -353,6 +354,10 @@ public class StateMachine {
     public void openInventory(){
         MinecraftClient client = MinecraftClient.getInstance();
         client.setScreen(new InventoryScreen(client.player));
+    }
+
+    public void closeScreen(){
+        mc.setScreen(null);
     }
 
     public void craftItem(Item item){
