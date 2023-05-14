@@ -339,7 +339,18 @@ public class StateMachine {
         
         return 1000; 
     }
-    
+    public List<ItemStack> getStacksOfItem(PlayerInventory inventory, Identifier id) {
+        List<ItemStack> items = new ArrayList<>();
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            
+            if (Registries.ITEM.getId(stack.getItem()) == id) {
+                items.add(stack);
+            }
+        }
+        
+        return items; 
+    }
 
     public void craftWoodPlanks(){
         craftItem(Blocks.OAK_PLANKS.asItem());
@@ -397,6 +408,33 @@ public class StateMachine {
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
 
         //don't forget to release keyboard input when stack is implemented
+    }
+
+    public boolean checkHasItem(List<String> args){
+
+        Identifier my_item = Identifier.tryParse(args.get(0));
+        int number;
+        try {
+            number = Integer.parseInt(args.get(1));
+        } catch (NumberFormatException e) {
+            LOGGER.info("Invalid number format: " + args.get(1));
+            return false;
+        }
+        LOGGER.info(my_item.toString());
+        LOGGER.info("Number: " + number);
+
+        PlayerInventory inv = me.getInventory();
+        List<ItemStack> stacks = getStacksOfItem(inv,my_item);
+        int count = 0;
+        for(ItemStack s: stacks){
+            count += s.getCount();
+        }
+
+        if(count >= number) {
+            return true;
+        }else{
+            return false;
+        }
     }
 
 }
