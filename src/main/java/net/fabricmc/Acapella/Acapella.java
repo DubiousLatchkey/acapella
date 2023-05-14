@@ -148,6 +148,7 @@ public class Acapella implements ModInitializer {
 			if(minecraftClient.player == null) return;   //prevents this function from running while in game menu
 			//THIS FUNCTION RUNS EVERY SINGLE TICK.
 			//THIS FUNCTION HANDLES CODE THAT SHOULD ONLY BE RELEVANT DURING THE EXECUTION OF /beatMinecraft
+			if(stateMachine.ticksToIdle > 0){ stateMachine.ticksToIdle--; return;}
 			if(stateMachine == null) return;
 			if(!stateMachine.active) return;
 				
