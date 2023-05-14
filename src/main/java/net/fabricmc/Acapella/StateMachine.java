@@ -23,6 +23,7 @@ import baritone.api.IBaritone;
 
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.command.argument.EntityAnchorArgumentType.EntityAnchor;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerInventory;
@@ -44,6 +45,7 @@ import net.minecraft.util.collection.DefaultedList;
 import baritone.api.schematic.*;
 import baritone.api.process.IBuilderProcess;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.Vec3d;
 import java.io.File;
@@ -51,6 +53,7 @@ import java.io.File;
 //view:
 import baritone.api.event.events.RotationMoveEvent;
 import baritone.api.utils.Rotation;
+import baritone.api.pathing.goals.*;
 
 //jump and click:
 import baritone.api.utils.input.*;
@@ -92,7 +95,9 @@ public class StateMachine {
     private MinecraftClient mc;
     private ClientPlayerEntity me;
     private IBaritone baritone;
+    private Vec3d lastEyePos;
     
+    public long ticksToIdle = 0;
 
 
     public StateMachine(){
@@ -275,6 +280,13 @@ public class StateMachine {
             { "retrieve slot3", "retrieveSlot3"},
             { "retrieve furnace", "retrieveFurnaceItems"},
             { "start furnace", "openFurnace"},
+            { "try goto stronghold", "tryGotoStronghold"},
+            { "look at eye", "lookAtEye"},
+            { "use eye", "useEye"},
+            { "move eye", "moveEyeToPosition5"},
+            { "goto stronghold", "throwEye"},
+            { "release keys", "releaseKeyboard"},
+            { "idle 1", "idle1"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -351,6 +363,10 @@ public class StateMachine {
         }
         Item actual_item = Registries.ITEM.get(my_item);
         craftItem(actual_item);
+    }
+
+    public void idle1(){
+        this.ticksToIdle = 20;
     }
 
     public void getPlanks(){
@@ -663,6 +679,57 @@ public class StateMachine {
             }
         }
 
+    }
+
+
+    public void throwEye(){
+        the_stack.pop();
+        addTask("try goto stronghold");
+        addTask("look at eye");
+        addTask("idle 2");
+        addTask("release keys");
+        addTask("use eye");
+        addTask("close inventory");
+        addTask("move eye");
+        addTask("open inventory");
+    }
+
+    public void tryGotoStronghold(){
+        GoalXZ goal = GoalXZ.fromDirection(
+                mc.player.getPos(),
+                mc.player.getRotationClient().y,
+                200
+        );
+
+        baritone.getCustomGoalProcess().setGoalAndPath(goal);
+    }
+
+    public void lookAtEye(){
+        Box nearby = new Box(mc.player.getBlockPos().add(-20,-20,-20),mc.player.getBlockPos().add(20,20,20));
+        Vec3d lookHere;
+        for (Entity entity : mc.world.getEntitiesByType(EntityType.EYE_OF_ENDER, nearby, i->true)){
+            lookHere = entity.getEyePos();
+            lastEyePos = lookHere;
+            mc.player.lookAt(EntityAnchor.EYES, lookHere);
+            break;
+        }
+    }
+
+    public void useEye(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.player.getInventory().selectedSlot = 4;
+        client.player.getInventory().markDirty();
+
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
+    }
+
+    public void moveEyeToPosition5(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.ENDER_EYE));
+        if(slot != 40){
+            swapSlots(slot, 40);
+        }
     }
 
     public void findObsidian() {
