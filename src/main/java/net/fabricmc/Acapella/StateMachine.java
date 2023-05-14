@@ -16,21 +16,20 @@ import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 
 import net.minecraft.client.*;
-import static net.minecraft.server.command.CommandManager.literal;
-import static net.minecraft.server.command.CommandManager.*;
 
-import baritone.BaritoneProvider;
+
 import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
-import baritone.api.command.Command;
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
-import net.minecraft.network.message.MessageType;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.registry.Registries;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -75,7 +74,10 @@ public class StateMachine {
         { "get wood", "getWood" },
         { "get planks", "getPlanks"},
         { "start craft", "openCraftingTable"},
-        { "craft planks", "craftWoodPlanks"}  
+        { "craft planks", "craftWoodPlanks"},
+        { "get iron", "getIron"},
+        { "smelt iron", "smeltIron"},
+        { "start furnace", "openFurnace"},  
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
 
@@ -213,6 +215,42 @@ public class StateMachine {
         );
 
         InventoryHelper.scheduleCraft();
+    }
+
+    public void getIron(){
+        the_stack.pop();
+        addTask("smelt iron");
+        addTask("start furnace");
+    }
+
+    public void openFurnace(){
+        baritone.getGetToBlockProcess().getToBlock(Blocks.FURNACE);
+    }
+
+    public void smeltIron(){
+        smeltItem(Items.IRON_ORE);
+    }
+
+    public void smeltItem(Item item){
+        Identifier id = Registries.ITEM.getId(item);
+        MinecraftClient client = MinecraftClient.getInstance();
+        int coalSlot = findItemStack(client.player.getInventory(), Registries.ITEM.getId(Items.COAL));
+        int smelteeSlot = findItemStack(client.player.getInventory(), Registries.ITEM.getId(item));
+
+        LOGGER.info(Integer.toString(coalSlot));
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, coalSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
+    }
+
+    public int findItemStack(PlayerInventory inventory, Identifier id) {
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            
+            if (Registries.ITEM.getId(stack.getItem()) == id) {
+                return i;
+            }
+        }
+        
+        return 1000; 
     }
     
 
