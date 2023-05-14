@@ -134,7 +134,7 @@ public class Acapella implements ModInitializer {
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
              
 			 stateMachine.addTask("get planks");
-			 //stateMachine.addTask("farm blazes");
+			 //stateMachine.addTask("prepare flint and steel");
 			 
 			 return 1;
         })));

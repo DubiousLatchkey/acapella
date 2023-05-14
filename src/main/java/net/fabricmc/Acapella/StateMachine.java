@@ -260,6 +260,8 @@ public class StateMachine {
             { "kill blazes", "killBlazes"},
             { "goto nether fence", "gotoNetherBrickFence"},
             { "goto spawner", "gotoSpawner"},
+            { "prepare flint and steel", "prepareFlintAndSteel"},
+            { "move flint and steel", "moveFlintAndSteelToPosition4"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -434,6 +436,27 @@ public class StateMachine {
             }
         }
         return 1000;
+    }
+
+    public void prepareFlintAndSteel(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("move flint and steel");
+        addTask("open inventory");
+    }
+
+    public void moveFlintAndSteelToPosition4(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FLINT_AND_STEEL));
+        swapSlots(slot, 39);
+    }
+
+    public void swapSlots (int slot1, int slot2){
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, me);
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot2, 0, SlotActionType.PICKUP, me);
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, me);
     }
 
     public int findItemStack(PlayerInventory inventory, Identifier id) {
