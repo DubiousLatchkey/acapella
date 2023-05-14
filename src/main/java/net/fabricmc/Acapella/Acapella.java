@@ -133,10 +133,11 @@ public class Acapella implements ModInitializer {
          .executes(context -> {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
-             
 
-			 //stateMachine.addTask("defeat enderDragon");
-			 stateMachine.addTask("goto stronghold");
+           
+           stateMachine.addTask("defeat enderDragon");
+
+			 //stateMachine.addTask("prepare flint and steel");
 
 			 
 			 return 1;
@@ -172,7 +173,7 @@ public class Acapella implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("mine")
          .executes(context -> {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
-			context.getSource().sendMessage(Text.literal("Mining some wood"));
+			context.getSource().sendMessage(Text.literal("#stop"));
 
 			ClientPlayerEntity me = MinecraftClient.getInstance().player;
 			IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(me);
