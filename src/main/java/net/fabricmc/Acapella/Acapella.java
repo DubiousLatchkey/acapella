@@ -14,12 +14,22 @@ import static net.minecraft.server.command.CommandManager.*;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.block.Blocks;
+
+
 
 public class Acapella implements ModInitializer {
 
@@ -35,6 +45,61 @@ public class Acapella implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
+
+		//copy relavent schematic files into right place
+		//path is ../../../../resources/buildSchematics to
+		// ../../../../../../run/schematics
+		//also need to make folder schematics if it doesn't exist
+		
+		try {
+
+			Path path = Paths.get("schematics");
+		
+			//java.nio.file.Files;
+			Files.createDirectories(path);
+		
+			System.out.println("Directory is created!");
+		
+		} catch (IOException e) {
+		
+			System.err.println("Failed to create directory!" + e.getMessage());
+		
+		  }
+
+		  //get path of each file to copy from:
+
+		Path craftingPath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "crafting_table.schem");
+		Path furnacePath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "furnace.schem");
+		Path portalPath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "portal.schem");
+
+		Path craftingTo = FileSystems.getDefault().getPath("schematics", "crafting_table.schem");
+		Path furnaceTo = FileSystems.getDefault().getPath("schematics", "furnace.schem");
+		Path portalTo = FileSystems.getDefault().getPath("schematics", "portal.schem");
+
+		if (!Files.exists(craftingTo)) {
+			try {
+				Files.createFile(craftingTo);
+				Files.copy(craftingPath, craftingTo, StandardCopyOption.REPLACE_EXISTING);
+			} catch (IOException e) {
+				System.err.println("Failed to copy file to " + e.getMessage());
+			  }
+		}
+		if (!Files.exists(furnaceTo)) {
+			try {
+				Files.createFile(furnaceTo);
+				Files.copy(furnacePath, furnaceTo, StandardCopyOption.REPLACE_EXISTING);
+			} catch (IOException e) {
+				System.err.println("Failed to copy file to " + e.getMessage());
+			  }
+		}
+		if (!Files.exists(portalTo)) {
+			try {
+				Files.createFile(portalTo);
+				Files.copy(portalPath, portalTo, StandardCopyOption.REPLACE_EXISTING);
+			} catch (IOException e) {
+				System.err.println("Failed to copy file to" + e.getMessage());
+			  }
+		}
 
 		LOGGER.info("Beat Mincecraft");
 		stateMachine = new StateMachine();
@@ -99,7 +164,7 @@ public class Acapella implements ModInitializer {
 		
 		
     }
-	
+
 	private void debug(){
 		ClientPlayerEntity me = MinecraftClient.getInstance().player;
 		IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(me);

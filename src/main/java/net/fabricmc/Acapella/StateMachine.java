@@ -219,9 +219,13 @@ public class StateMachine {
             { "start", "none" }, 
             { "get wood", "getWood" },
             { "get planks", "getPlanks"},
+            { "place craft", "placeCraftingTable"},
             { "start craft", "openCraftingTable"},
             { "open inventory", "openInventory"},
-            { "craft planks", "craftWoodPlanks"}  
+            { "place furnace", "placeFurnace"},
+            { "make portal", "placePortal"},
+            { "light portal", "lightPortal"}
+
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -230,6 +234,7 @@ public class StateMachine {
             { "get wood", "$" },
             { "get planks", "$"},
             { "start craft", "$"},
+            {"place craft", "$"},
             { "open inventory", "$"},
             { "craft planks", "$"}  
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
@@ -250,6 +255,11 @@ public class StateMachine {
     
     public void getGrass(){
         getMaterial(Blocks.DIRT);
+    }
+
+    public void createPortal() {
+        the_stack.pop();
+        //addTask();
     }
 
 
@@ -356,16 +366,41 @@ public class StateMachine {
         craftItem(Blocks.OAK_PLANKS.asItem());
     }
   
-  public void placeAndUseCraftingTable(){
+    public void placeCraftingTable(){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        BlockPos craftingPos = me.getBlockPos();
+
+        BaritoneAPI.getSettings().allowInventory.value = true;
+        Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("crafting_table.schem", craftingPos);
+
+        if (!out) {
+            me.sendMessage(Text.literal("failed to place crafting table"));
+        } 
+
+        /* //still very useful code (def use later)
         Rotation rotate = new Rotation(0, 90);
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.JUMP, true);
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys(); 
+        */
 
 
+
+    }
+
+    public void placeFurnace() {
+
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        BlockPos craftingPos = me.getBlockPos();
+
+        BaritoneAPI.getSettings().allowInventory.value = true;
+        Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("furnace.schem", craftingPos);
+
+        if (!out) {
+            me.sendMessage(Text.literal("failed to place furnace"));
+        }
     }
 
     public void placePortal() {
@@ -373,22 +408,21 @@ public class StateMachine {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos portalPos = me.getBlockPos();
         
-        me.sendMessage(Text.literal("currently at" + portalPos.getX() + "," + portalPos.getY() + "," + portalPos.getZ()));
+        //me.sendMessage(Text.literal("currently at" + portalPos.getX() + "," + portalPos.getY() + "," + portalPos.getZ()));
         
         BaritoneAPI.getSettings().allowInventory.value = true;
         Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("portal.schem", portalPos);
         //Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("../../../../resources/buildSchematics/portal.schem", schemFile, portalPos);
         
-        if (out) {
-            me.sendMessage(Text.literal("build successful"));
-        } else {
-            me.sendMessage(Text.literal("build unsuccessful"));
+        if (!out) {
+            me.sendMessage(Text.literal("failed to build nether portal"));
         } 
 
         lastPortalPos = portalPos;
 
     }
     
+    //NOTE: only works on a portal you've placed immeditaly before. Otherwise, lightPortal will just fail.
     public void lightPortal() {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
 
