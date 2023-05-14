@@ -196,6 +196,10 @@ public class StateMachine {
         }
     }
 
+    public void idle1(){
+        ticksToIdle = 20;
+    }
+
     private boolean check_condition(Task task_arg){
         String task = task_arg.task;
         List<String> args = task_arg.args;
@@ -256,7 +260,6 @@ public class StateMachine {
             { "start craft", "openCraftingTable"},
             { "open inventory", "openInventory"},
             { "close inventory", "closeScreen"},
-            { "start furnace", "openFurnace"},
             { "place furnace", "placeFurnace"},
             { "smelt iron", "smeltIron"},
             { "get obsidian", "getObsidian"},
@@ -283,7 +286,7 @@ public class StateMachine {
             { "move flint and steel", "moveFlintAndSteelToPosition4"},
             { "break underneath", "breakBlockUnderneath"},
             { "set radius small", "setRadiusSmall"},
-            { "set radius large", "setRadiusLarge"}
+            { "set radius large", "setRadiusLarge"},
             { "retrieve slot3", "retrieveSlot3"},
             { "retrieve furnace", "retrieveFurnaceItems"},
             { "start furnace", "openFurnace"},
@@ -788,7 +791,7 @@ public class StateMachine {
         the_stack.pop();
         addTask("try goto stronghold");
         addTask("look at eye");
-        addTask("idle 2");
+        addTask("idle 1");
         addTask("release keys");
         addTask("use eye");
         addTask("close inventory");
