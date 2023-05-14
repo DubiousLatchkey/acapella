@@ -272,7 +272,9 @@ public class StateMachine {
             { "goto spawner", "gotoSpawner"},
             { "prepare flint and steel", "prepareFlintAndSteel"},
             { "move flint and steel", "moveFlintAndSteelToPosition4"},
-
+            { "retrieve slot3", "retrieveSlot3"},
+            { "retrieve furnace", "retrieveFurnaceItems"},
+            { "start furnace", "openFurnace"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -447,6 +449,7 @@ public class StateMachine {
 
     public void getIron(){
         the_stack.pop();
+        addTask("close inventory");
         addTask("smelt iron");
         addTask("start furnace");
     }
@@ -477,6 +480,18 @@ public class StateMachine {
             }
         }
         return 1000;
+    }
+
+    public void retrieveFurnaceItems(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("retrieve slot3");
+        addTask("start furnace");
+    }
+
+    public void retrieveSlot3(){
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, 2, 0, SlotActionType.QUICK_MOVE, client.player);        
     }
 
     public void prepareFlintAndSteel(){
