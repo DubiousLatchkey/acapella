@@ -240,9 +240,10 @@ public class StateMachine {
             { "place furnace", "placeFurnace"},
             { "make portal", "placePortal"},
             { "light portal", "lightPortal"},
-            { "craft planks", "craftWoodPlanks"},
             { "clean inputs", "releaseKeyboard"},
-            { "equip armor", "equipAllArmor"},
+            { "equip armor", "equipArmor"},
+            { "equip all armor", "equipAllArmor"},
+
 
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
@@ -255,6 +256,8 @@ public class StateMachine {
             { "start craft", "$" },
             {"place craft", "$" },
             { "open inventory", "$" },
+            { "close inventory", "$" },
+            { "equip armor", "$" },
             { "craft planks", "$" },
             { "place furnace", "$" },
             { "make portal", "$" },
@@ -509,7 +512,8 @@ public class StateMachine {
 
         for (int i = 0; i < inventory.size(); i++){
             if( inventory.getStack(i).getItem() instanceof ArmorItem ){
-                client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 0, SlotActionType.QUICK_MOVE, client.player);        
+                
+                client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 1, SlotActionType.QUICK_MOVE, client.player);        
             }
         }
     }
