@@ -50,6 +50,7 @@ import java.io.File;
 
 //view:
 import baritone.api.event.events.RotationMoveEvent;
+import baritone.api.utils.BlockOptionalMeta;
 import baritone.api.utils.Rotation;
 
 //jump and click:
@@ -60,6 +61,9 @@ import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalBlock;
 import baritone.api.pathing.goals.GoalXZ;
 import baritone.api.process.ICustomGoalProcess;
+import baritone.api.process.IMineProcess;
+import baritone.api.process.PathingCommand;
+import baritone.api.process.PathingCommandType;
 
 @Mixin(ClientPlayerEntity.class)
 public class StateMachine {
@@ -124,11 +128,10 @@ public class StateMachine {
             active = false;
             return;
         }
-
         LOGGER.info("Evaluating on task " + the_stack.peek().task);
         
         if(currTaskName == "$"){
-            me.sendMessage(Text.literal("Starting new task: " + the_stack.peek().task));
+            me.sendMessage(Text.literal("Starting new task: " + the_stack.peek().task + ", args: " + the_stack.peek().args.toString()));
             currTaskName = the_stack.peek().task;
             initiate_task(the_stack.peek());
             return;
@@ -242,15 +245,15 @@ public class StateMachine {
         actions = Stream.of(new String[][] {
             { "start", "none" }, 
             { "defeat enderDragon", "ultimateTask"},
-            { "get wood", "getWood" },
             { "get planks", "getPlanks"},
-            { "craft planks", "craftWoodPlanks"},
             { "craft craft", "craftCraftingTable"},
             { "place craft", "placeCraftingTable"},
             { "start craft", "openCraftingTable"},
             { "open inventory", "openInventory"},
             { "close inventory", "closeScreen"},
+            { "start furnace", "openFurnace"},
             { "place furnace", "placeFurnace"},
+            { "smelt iron", "smeltIron"},
             { "get obsidian", "getObsidian"},
             { "find obsidian", "findObsidian"},
             { "mine obsidian", "mineObsidian"},
@@ -264,6 +267,7 @@ public class StateMachine {
             { "get water", "getWater"},
             { "place water", "placeWater"},
             { "CRAFTGENERIC", "CRAFTRECIPE"},
+            { "GETGENERIC", "GETITEM"},
             { "equip armor", "equipArmor"},
             { "equip all armor", "equipAllArmor"},
             { "farm blazes", "farmBlazes"},
@@ -272,6 +276,9 @@ public class StateMachine {
             { "goto spawner", "gotoSpawner"},
             { "prepare flint and steel", "prepareFlintAndSteel"},
             { "move flint and steel", "moveFlintAndSteelToPosition4"},
+            { "break underneath", "breakBlockUnderneath"},
+            { "set radius small", "setRadiusSmall"},
+            { "set radius large", "setRadiusLarge"}
             { "retrieve slot3", "retrieveSlot3"},
             { "retrieve furnace", "retrieveFurnaceItems"},
             { "start furnace", "openFurnace"},
@@ -324,18 +331,130 @@ public class StateMachine {
         // addTask("get iron");
         // addTask("get stone pickaxe");
         // addTask("get wood pickaxe");
-        //addTask("craft craft");
-        //addTask("get water");
+
+        // addTask("GETGENERIC", "")
+
+
+        addTask("smelt iron");
+        addTask("start furnace");
+
+        addTask("place furnace");
+        // closeAndGrabCraftingTable();
+        // addTask("CRAFTGENERIC","furnace","1");
+        // placeAndOpenCraftingTable();
+
+        
+        // addTask("GETGENERIC", "iron_ore", "20");
+        // addTask("GETGENERIC", "coal_ore", "5");
+
+        
+        // addTask("GETGENERIC", "oak_log","20");
+
+        // closeAndGrabCraftingTable();
+        // addTask("CRAFTGENERIC","stone_pickaxe","1");
+        // addTask("CRAFTGENERIC","stone_sword","1");
+        // addTask("CRAFTGENERIC","stone_axe","1");
+        // addTask("CRAFTGENERIC","stone_shovel","1");
+        // placeAndOpenCraftingTable();
+
+        // addTask("GETGENERIC", "stone","20","cobblestone");
+
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","wooden_pickaxe","1");
+        addTask("CRAFTGENERIC","stick","3");
+        placeAndOpenCraftingTable();
+
+        
+        addTask("get planks");
+        
+        
+        
+    }
+
+    public void closeAndGrabCraftingTable(){
+        // addTask("set radius large");
+        addTask("GETGENERIC", "crafting_table", "1");
+        // addTask("set radius small");
+        addTask("close inventory");
+
+    }
+
+    public void placeAndOpenCraftingTable(){
+        addTask("start craft");
         addTask("place craft");
         addTask("close inventory");
         addTask("CRAFTGENERIC", "crafting_table", "1");
         addTask("open inventory");
-        addTask("get planks");
 
+        
+    }
 
+    public void getPlanks(){
+        the_stack.pop();
+        addTask("close inventory");
+        addTask("CRAFTGENERIC", "oak_planks", "5");
+        addTask("open inventory");
+        addTask("GETGENERIC","oak_log", "5");
+    }
+
+    public void setRadiusSmall(){
+        BaritoneAPI.getSettings().blockReachDistance.value = 10f;
+    }
+
+    public void setRadiusLarge(){
+        BaritoneAPI.getSettings().blockReachDistance.value = 200f;
 
     }
 
+    public void breakBlockUnderneath(){
+        BlockPos playerPos = BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext().playerFeet();
+
+        // Calculate the position of the block to break (crafting table in this case)
+        BlockPos blockPos = playerPos.down(); // Set the position of the crafting table
+
+        // Create a custom IMineProcess to break the crafting table
+        IMineProcess mineProcess = BaritoneAPI.getProvider().getPrimaryBaritone().getMineProcess();
+
+        // Set the mining target to the crafting table
+        
+        mineProcess.mine(1, new BlockOptionalMeta(Blocks.CRAFTING_TABLE));
+
+        // // Force revalidate the goal and path
+        // PathingCommand pathingCommand = new PathingCommand(null, PathingCommandType.FORCE_REVALIDATE_GOAL_AND_PATH);
+        // BaritoneAPI.getProvider().getPrimaryBaritone().getPathingControlManager().execute(pathingCommand);
+
+    }
+
+
+    public void GETITEM(List<String> args){
+        int number;
+        Block[] newArray = new Block[args.size()-1];
+
+        newArray[0] = Registries.BLOCK.get(Identifier.tryParse(args.get(0)));
+        if(args.size() > 2){
+            for(int i = 0; i < args.size() - 2; i++){
+                newArray[i+1] = Registries.BLOCK.get(Identifier.tryParse(args.get(i + 2)));
+            }
+        }
+        
+
+        try {
+            number = Integer.parseInt(args.get(1));
+        } catch (NumberFormatException e) {
+            LOGGER.info("Invalid number format: " + args.get(1));
+            number = 5;
+        }
+
+        getMaterial(number, newArray);
+
+
+        LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.value.get(0).toString());
+        if(BaritoneAPI.getSettings().blocksToAvoidBreaking.value.get(0) == Blocks.CRAFTING_TABLE){
+            me.sendMessage(Text.literal("DONT AVOID BREAKING CRAFTING TABLES YEAHAHH"));
+            BaritoneAPI.getSettings().blocksToAvoidBreaking.value.remove(Blocks.CRAFTING_TABLE);
+            BaritoneAPI.getSettings().blocksToAvoidBreaking.value.remove(Blocks.FURNACE);
+        }
+    }
 
 
 
@@ -350,29 +469,13 @@ public class StateMachine {
             number = 5;
         }
         Item actual_item = Registries.ITEM.get(my_item);
-        craftItem(actual_item);
+        for(int i = 0; i < number; i++){
+            craftItem(actual_item);
+        }
     }
 
-    public void getPlanks(){
-        the_stack.pop();
-        addTask("close inventory");
-        addTask("craft planks");
-        addTask("open inventory");
-        addTask("get wood");
-    }
 
-    public void getWood(){
-        getMaterial(Blocks.OAK_LOG);
-    }
 
-    
-    public void getGrass(){
-        getMaterial(Blocks.DIRT);
-    }
-
-    public void mineStone() {
-        getMaterial(Blocks.STONE);
-    }
 
     public void getWater() {
         the_stack.pop();
@@ -407,9 +510,10 @@ public class StateMachine {
         return;
     }
     
-    public void getMaterial (Block block){
-        LOGGER.info("Getting " + block.getName() );
-        baritone.getMineProcess().mine(5, block);
+    public void getMaterial (int num, Block... my_blocks){
+        // LOGGER.info("Getting " + block.getName() );
+        // my_blocks.add(block);
+        baritone.getMineProcess().mine(num, my_blocks);
         
     
     }
@@ -447,12 +551,6 @@ public class StateMachine {
         InventoryHelper.scheduleCraft();
     }
 
-    public void getIron(){
-        the_stack.pop();
-        addTask("close inventory");
-        addTask("smelt iron");
-        addTask("start furnace");
-    }
 
     public void openFurnace(){
         baritone.getGetToBlockProcess().getToBlock(Blocks.FURNACE);
@@ -573,18 +671,6 @@ public class StateMachine {
     }
 
 
-    public void craftWoodPlanks(){
-        craftItem(Blocks.OAK_PLANKS.asItem());
-    }
-
-    public void craftFurnace(){
-        craftItem(Blocks.FURNACE.asItem());
-    }
-  
-    public void craftCraftingTable(){
-        craftItem(Blocks.CRAFTING_TABLE.asItem());
-    }
-
     public void placeCraftingTable(){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos craftingPos = me.getBlockPos();
@@ -608,6 +694,26 @@ public class StateMachine {
     }
 
     public void placeFurnace() {
+        // BlockPos playerPos = BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext().playerFeet();
+
+        // // Calculate the position where you want to place the block
+        // // BlockPos targetPos = playerPos.down(); // Example: Place a block above the player
+
+        // // Place the block using Baritone
+        // BaritoneAPI.getProvider().getPrimaryBaritone().getBuilderProcess().build("furnace", playerPos);
+
+        
+        BaritoneAPI.getSettings().buildIgnoreDirection.value = true;
+        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing=north");
+        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("lit");
+        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing");
+        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("list=false");
+        BaritoneAPI.getSettings().buildIgnoreProperties.value.add("[facing=north,lit=false]");
+        
+
+        LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.toString());
+        LOGGER.info(BaritoneAPI.getSettings().buildIgnoreProperties.toString());
+
 
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos craftingPos = me.getBlockPos();
