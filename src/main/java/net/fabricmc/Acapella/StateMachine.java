@@ -23,6 +23,8 @@ import baritone.api.IBaritone;
 
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.Item;
@@ -243,8 +245,10 @@ public class StateMachine {
             { "clean inputs", "releaseKeyboard"},
             { "equip armor", "equipArmor"},
             { "equip all armor", "equipAllArmor"},
-
-
+            { "farm blazes", "farmBlazes"},
+            { "kill blazes", "killBlazes"},
+            { "goto nether fence", "gotoNetherBrickFence"},
+            { "goto spawner", "gotoSpawner"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -262,7 +266,7 @@ public class StateMachine {
             { "place furnace", "$" },
             { "make portal", "$" },
             { "light portal", "$" },
-            { "clean inputs", "$" } 
+            { "clean inputs", "$" }
 
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
@@ -423,6 +427,27 @@ public class StateMachine {
         
         return 1000; 
     }
+
+    public void farmBlazes(){
+        the_stack.pop();
+        addTask("kill blazes", "minecraft:blaze_rod", "7");
+        addTask("goto spawner");
+        addTask("goto nether fence");
+
+    }
+
+    public void gotoNetherBrickFence(){
+        baritone.getGetToBlockProcess().getToBlock(Blocks.NETHER_BRICK_FENCE);
+    }
+
+    public void gotoSpawner(){
+        baritone.getGetToBlockProcess().getToBlock(Blocks.SPAWNER);
+    }
+
+    public void killBlazes(){
+        baritone.getFollowProcess().follow(i -> i.getType() ==  EntityType.BLAZE);
+    }
+
     public List<ItemStack> getStacksOfItem(PlayerInventory inventory, Identifier id) {
         List<ItemStack> items = new ArrayList<>();
         for (int i = 0; i < inventory.size(); i++) {
