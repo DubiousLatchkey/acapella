@@ -256,6 +256,11 @@ public class Acapella implements ModInitializer {
 						entities.add( entity);
 					}
 
+					if(entities.size() > 0){
+						PlayerInventory inventory = mc.player.getInventory();
+						inventory.selectedSlot = 0;
+						inventory.markDirty();
+					}
 
 					entities.forEach(entity -> {
 						if (entity.isAttackable()){
