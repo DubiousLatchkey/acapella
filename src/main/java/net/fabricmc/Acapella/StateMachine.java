@@ -148,6 +148,13 @@ public class StateMachine {
         String task = task_arg.task;
         List<String> args = task_arg.args;
 
+
+        if(actions.get(task) == null){
+            LOGGER.info("initiate_task: No mapping exists for this task!");
+            me.sendMessage(Text.literal("INITIATE TASK FAILED"));
+            clearStack();
+            return;
+        }
         try{
             Method method = this.getClass().getDeclaredMethod( actions.get(task)) ;
 
@@ -175,9 +182,10 @@ public class StateMachine {
         List<String> args = task_arg.args;
         
         String condition = conditions.get(task);
+        if(condition == null) return true;
         if(condition == "$") return true;
         try{
-            Method method = this.getClass().getDeclaredMethod( conditions.get(task)) ;
+            Method method = this.getClass().getDeclaredMethod( condition) ;
             method.setAccessible(true);
 
             try{
@@ -217,23 +225,70 @@ public class StateMachine {
     static {
         actions = Stream.of(new String[][] {
             { "start", "none" }, 
+            { "defeat enderDragon", "ultimateTask"},
             { "get wood", "getWood" },
             { "get planks", "getPlanks"},
+            { "craft planks", "craftWoodPlanks"},
+            { "craft craft", "craftCraftingTable"},
+            { "place craft", "placeCraftingTable"},
             { "start craft", "openCraftingTable"},
             { "open inventory", "openInventory"},
-            { "craft planks", "craftWoodPlanks"}  
+            { "place furnace", "placeFurnace"},
+            { "make portal", "placePortal"},
+            { "light portal", "lightPortal"}
+
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
         conditions = Stream.of(new String[][] {
             { "start", "none" }, 
+            { "defeat enderDragon", "$"},
             { "get wood", "$" },
             { "get planks", "$"},
             { "start craft", "$"},
+            { "place craft", "$"},
             { "open inventory", "$"},
             { "craft planks", "$"}  
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     }
+
+
+    public void ultimateTask(){
+        the_stack.pop();
+        // addTask("kill dragon");
+        // addTask("enter end");
+        // addTask("activate endportal");
+        // addTask("find stronghold");
+        // addTask("get eye of ender");
+        // addTask("trade for ender pearls");
+        // addTask("get blaze powder");
+        // addTask("enter nether");
+        // addTask("build portal");
+        // addTask("get obsidian");
+        // addTask("get diamonds");
+        // addTask("get iron");
+        // addTask("get stone pickaxe");
+        // addTask("get wood pickaxe");
+        addTask("place craft");
+        addTask("craft craft");
+        addTask("get planks");
+
+
+    }
+
+
+
+
+    // public void CRAFTRECIPE(List<String> args){
+    //     Identifier my_item = Identifier.tryParse(args.get(0));
+    //     int number;
+    //     try {
+    //         number = Integer.parseInt(args.get(1));
+    //     } catch (NumberFormatException e) {
+    //         LOGGER.info("Invalid number format: " + args.get(1));
+    //         number = 5;
+    //     }
+    // }
 
     public void getPlanks(){
         the_stack.pop();
@@ -250,6 +305,11 @@ public class StateMachine {
     
     public void getGrass(){
         getMaterial(Blocks.DIRT);
+    }
+
+    public void createPortal() {
+        the_stack.pop();
+        //addTask();
     }
 
 
@@ -352,20 +412,63 @@ public class StateMachine {
         return items; 
     }
 
+    public int getCountOfItem(PlayerInventory inventory, Identifier id) {
+        int count = 0;
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            
+            if (Registries.ITEM.getId(stack.getItem()) == id) {
+                count += stack.getCount();
+            }
+        }
+        
+        return count; 
+    }
+
+
     public void craftWoodPlanks(){
         craftItem(Blocks.OAK_PLANKS.asItem());
     }
   
-  public void placeAndUseCraftingTable(){
+    public void craftCraftingTable(){
+        craftItem(Blocks.CRAFTING_TABLE.asItem());
+    }
+
+    public void placeCraftingTable(){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        BlockPos craftingPos = me.getBlockPos();
+
+        BaritoneAPI.getSettings().allowInventory.value = true;
+        Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("crafting_table.schem", craftingPos);
+
+        if (!out) {
+            me.sendMessage(Text.literal("failed to place crafting table"));
+        } 
+
+        /* //still very useful code (def use later)
         Rotation rotate = new Rotation(0, 90);
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.JUMP, true);
-        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
+        BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys(); 
+        */
 
 
+
+    }
+
+    public void placeFurnace() {
+
+        ClientPlayerEntity me = MinecraftClient.getInstance().player;
+        BlockPos craftingPos = me.getBlockPos();
+
+        BaritoneAPI.getSettings().allowInventory.value = true;
+        Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("furnace.schem", craftingPos);
+
+        if (!out) {
+            me.sendMessage(Text.literal("failed to place furnace"));
+        }
     }
 
     public void placePortal() {
@@ -373,22 +476,21 @@ public class StateMachine {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos portalPos = me.getBlockPos();
         
-        me.sendMessage(Text.literal("currently at" + portalPos.getX() + "," + portalPos.getY() + "," + portalPos.getZ()));
+        //me.sendMessage(Text.literal("currently at" + portalPos.getX() + "," + portalPos.getY() + "," + portalPos.getZ()));
         
         BaritoneAPI.getSettings().allowInventory.value = true;
         Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("portal.schem", portalPos);
         //Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("../../../../resources/buildSchematics/portal.schem", schemFile, portalPos);
         
-        if (out) {
-            me.sendMessage(Text.literal("build successful"));
-        } else {
-            me.sendMessage(Text.literal("build unsuccessful"));
+        if (!out) {
+            me.sendMessage(Text.literal("failed to build nether portal"));
         } 
 
         lastPortalPos = portalPos;
 
     }
     
+    //NOTE: only works on a portal you've placed immeditaly before. Otherwise, lightPortal will just fail.
     public void lightPortal() {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
 
