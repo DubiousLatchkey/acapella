@@ -278,6 +278,7 @@ public class StateMachine {
             { "make portal", "$" },
             { "light portal", "$" },
             { "clean inputs", "$" },
+            { "kill blazes", "checkHasItem" },
             { "CRAFTGENERIC", "checkHasItem"},
 
           }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
@@ -463,7 +464,7 @@ public class StateMachine {
         baritone.getGetToBlockProcess().getToBlock(Blocks.SPAWNER);
     }
 
-    public void killBlazes(){
+    public void killBlazes(List<String> args){
         baritone.getFollowProcess().follow(i -> i.getType() ==  EntityType.BLAZE);
     }
 
