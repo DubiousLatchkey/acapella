@@ -138,7 +138,7 @@ public class Acapella implements ModInitializer {
            
            //stateMachine.addTask("defeat enderDragon");
 
-			 stateMachine.addTask("goto stronghold");
+			 stateMachine.addTask("defeat enderDragon");
 
 			 
 			 return 1;
