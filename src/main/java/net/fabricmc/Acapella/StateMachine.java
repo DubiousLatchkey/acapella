@@ -33,10 +33,12 @@ import net.minecraft.network.message.MessageType;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.registry.Registries;
+import net.minecraft.screen.FurnaceScreenHandler;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-
+import net.minecraft.util.collection.DefaultedList;
 //schematics:
 import baritone.api.schematic.*;
 import baritone.api.process.IBuilderProcess;
@@ -259,17 +261,27 @@ public class StateMachine {
     }
 
     public void smeltIron(){
-        smeltItem(Items.IRON_ORE);
+        smeltItem(Items.RAW_IRON);
     }
 
     public void smeltItem(Item item){
-        Identifier id = Registries.ITEM.getId(item);
         MinecraftClient client = MinecraftClient.getInstance();
-        int coalSlot = findItemStack(client.player.getInventory(), Registries.ITEM.getId(Items.COAL));
-        int smelteeSlot = findItemStack(client.player.getInventory(), Registries.ITEM.getId(item));
+        int coalSlot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.COAL));
+        int smelteeSlot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(item));
 
         LOGGER.info(Integer.toString(coalSlot));
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, coalSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
+        client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, smelteeSlot, 0, SlotActionType.QUICK_MOVE, client.player);        
+
+    }
+
+    public int findInSlots(DefaultedList<Slot> listOfSlots, Identifier id){
+        for( int i = 0; i < listOfSlots.size(); i++){
+            if(Registries.ITEM.getId(listOfSlots.get(i).getStack().getItem()) == id ){
+                return i;
+            }
+        }
+        return 1000;
     }
 
     public int findItemStack(PlayerInventory inventory, Identifier id) {
