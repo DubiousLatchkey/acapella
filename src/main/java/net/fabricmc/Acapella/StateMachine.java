@@ -376,79 +376,83 @@ public class StateMachine {
         //addTask("get obsidian");
         // addTask("get diamonds");
         
-        addTask("farm endermen");
+        // addTask("farm endermen");
 
-        addTask("farm blazes");
-        addTask("GETGENERIC","obsidian","10");
+        // addTask("farm blazes");
+        // addTask("idle custom","100");
 
-        addTask("idle custom","300");
+        // addTask("create portal");
+        // addTask("GETGENERIC","ender_pearl","10");
+        // addTask("GETGENERIC","blaze_rod","10");
+
+        addTask("idle custom","200");
 
         addTask("create portal");
-        addTask("GETGENERIC","obsidian","10");
+        addTask("GETGENERIC","obsidian","14");
 
-        // addTask("equip all armor");
+        addTask("equip all armor");
 
-        // closeAndGrabCraftingTable();
-        // addTask("CRAFTGENERIC","iron_chestplate","1");
-        // addTask("CRAFTGENERIC","iron_helmet","1");
-        // addTask("CRAFTGENERIC","iron_leggings","1");
-        // addTask("CRAFTGENERIC","iron_boots","1");
-        // addTask("CRAFTGENERIC","flint_and_steel","1");
-        // placeAndOpenCraftingTable();
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","iron_chestplate","1");
+        addTask("CRAFTGENERIC","iron_helmet","1");
+        addTask("CRAFTGENERIC","iron_leggings","1");
+        addTask("CRAFTGENERIC","iron_boots","1");
+        addTask("CRAFTGENERIC","flint_and_steel","1");
+        placeAndOpenCraftingTable();
 
 
-        // addTask("use furnace with iron");
+        addTask("use furnace with iron");
 
-        // addTask("GETGENERIC","gravel","20");
-        // addTask("GETGENERIC","iron_ore","24");
-        // closeAndGrabCraftingTable();
-        // addTask("CRAFTGENERIC","diamond_pickaxe","1");
-        // addTask("CRAFTGENERIC","diamond_sword","1");
-        // placeAndOpenCraftingTable();
+        addTask("GETGENERIC","gravel","20");
+        addTask("GETGENERIC","iron_ore","24");
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","diamond_pickaxe","1");
+        addTask("CRAFTGENERIC","diamond_sword","1");
+        placeAndOpenCraftingTable();
 
-        // addTask("GETGENERIC","diamond_ore","5");
+        addTask("GETGENERIC","diamond_ore","5");
         
-        // closeAndGrabCraftingTable();
-        // addTask("CRAFTGENERIC","iron_pickaxe","1");
-        // addTask("CRAFTGENERIC","stick","4");
-        // addTask("CRAFTGENERIC","oak_planks","20");
-        // placeAndOpenCraftingTable();
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","iron_pickaxe","1");
+        addTask("CRAFTGENERIC","stick","4");
+        addTask("CRAFTGENERIC","oak_planks","20");
+        placeAndOpenCraftingTable();
 
-        // addTask("GETGENERIC", "furnace", "1");
-        // addTask("use furnace with iron");
-        // closeAndGrabCraftingTable();
-        // addTask("CRAFTGENERIC","furnace","1");
-        // placeAndOpenCraftingTable();
-
-        
-        // addTask("GETGENERIC", "iron_ore", "7");
-        // addTask("GETGENERIC", "coal_ore", "15");
+        addTask("GETGENERIC", "furnace", "1");
+        addTask("use furnace with iron");
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","furnace","1");
+        placeAndOpenCraftingTable();
 
         
-        // addTask("GETGENERIC", "oak_log","20");
-
-        // closeAndGrabCraftingTable();
-        // addTask("CRAFTGENERIC","stone_pickaxe","1");
-        // addTask("CRAFTGENERIC","stone_sword","1");
-        // addTask("CRAFTGENERIC","stone_axe","1");
-        // addTask("CRAFTGENERIC","stone_shovel","1");
-        // placeAndOpenCraftingTable();
-
-        // addTask("GETGENERIC", "cobblestone","20","stone");
-        // addTask("break underneath");
-        // addTask("break underneath");
-
-        // closeAndGrabCraftingTable();
-        // addTask("CRAFTGENERIC","wooden_pickaxe","1");
-        // addTask("CRAFTGENERIC","wooden_shovel","1");
-        // addTask("CRAFTGENERIC","stick","4");
-        // placeAndOpenCraftingTable();
-        // addTask("close inventory");
-        // addTask("CRAFTGENERIC", "crafting_table", "1");
-        // addTask("open inventory");
+        addTask("GETGENERIC", "iron_ore", "7");
+        addTask("GETGENERIC", "coal_ore", "15");
 
         
-        // addTask("get planks");
+        addTask("GETGENERIC", "oak_log","20");
+
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","stone_pickaxe","1");
+        addTask("CRAFTGENERIC","stone_sword","1");
+        addTask("CRAFTGENERIC","stone_axe","1");
+        addTask("CRAFTGENERIC","stone_shovel","1");
+        placeAndOpenCraftingTable();
+
+        addTask("GETGENERIC", "cobblestone","20","stone");
+        addTask("break underneath");
+        addTask("break underneath");
+
+        closeAndGrabCraftingTable();
+        addTask("CRAFTGENERIC","wooden_pickaxe","1");
+        addTask("CRAFTGENERIC","wooden_shovel","1");
+        addTask("CRAFTGENERIC","stick","4");
+        placeAndOpenCraftingTable();
+        addTask("close inventory");
+        addTask("CRAFTGENERIC", "crafting_table", "1");
+        addTask("open inventory");
+
+        
+        addTask("get planks");
         
         
         
