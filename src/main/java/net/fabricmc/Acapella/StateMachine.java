@@ -117,7 +117,12 @@ public class StateMachine {
         the_stack.push(new Task("$"));
     }
 
-    public void addTask(String state, String... values){
+    public int addTask(String state, String... values){
+        
+        if(!actions.containsKey(state)){
+            return -1;
+        }
+
         mc = MinecraftClient.getInstance();
         me = MinecraftClient.getInstance().player;
         baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(me);
@@ -130,6 +135,15 @@ public class StateMachine {
         the_stack.push(new Task(state,args));
         active = true;
         currTaskName = "$";
+        return 0;
+    }
+
+    public void printStack(){
+        int count = 0;
+        for(Task x : the_stack){
+            me.sendMessage(Text.literal("" + count + ": " + x.task));
+            count++;
+        }
     }
 
     
@@ -301,7 +315,6 @@ public class StateMachine {
             { "farm endermen", "farmEndermen"},
             { "kill endermen", "killEndermen"},
             { "goto warped forest", "gotoWarpedForest"},
-
             { "goto spawner", "gotoSpawner"},
             { "prepare flint and steel", "prepareFlintAndSteel"},
             { "move flint and steel", "moveFlintAndSteelToPosition4"},
@@ -370,26 +383,11 @@ public class StateMachine {
         the_stack.pop();
 
 
-        // addTask("kill dragon");
-        // addTask("enter end");
-        // addTask("activate endportal");
-        // addTask("find stronghold");
-        // addTask("get eye of ender");
-        // addTask("trade for ender pearls");
-        // addTask("get blaze powder");
-        // addTask("enter nether");
-        // addTask("create portal");
-        //addTask("get obsidian");
-        // addTask("get diamonds");
         
-        // addTask("farm endermen");
+        addTask("farm endermen");
 
-        // addTask("farm blazes");
-        // addTask("idle custom","100");
+        addTask("farm blazes");
 
-        // addTask("create portal");
-        // addTask("GETGENERIC","ender_pearl","10");
-        // addTask("GETGENERIC","blaze_rod","10");
 
         addTask("idle custom","200");
 
@@ -432,19 +430,19 @@ public class StateMachine {
 
         
         addTask("GETGENERIC", "iron_ore", "7");
-        addTask("GETGENERIC", "coal_ore", "15");
+        addTask("GETGENERIC", "coal_ore", "7");
 
         
-        addTask("GETGENERIC", "oak_log","20");
+        addTask("GETGENERIC", "oak_log","10");
 
         closeAndGrabCraftingTable();
         addTask("CRAFTGENERIC","stone_pickaxe","1");
-        addTask("CRAFTGENERIC","stone_sword","1");
+        // addTask("CRAFTGENERIC","stone_sword","1");
         addTask("CRAFTGENERIC","stone_axe","1");
-        addTask("CRAFTGENERIC","stone_shovel","1");
+        // addTask("CRAFTGENERIC","stone_shovel","1");
         placeAndOpenCraftingTable();
 
-        addTask("GETGENERIC", "cobblestone","20","stone");
+        addTask("GETGENERIC", "cobblestone","15","stone");
         addTask("break underneath");
         addTask("break underneath");
 
@@ -551,7 +549,6 @@ public class StateMachine {
 
         LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.value.get(0).toString());
         if(BaritoneAPI.getSettings().blocksToAvoidBreaking.value.get(0) == Blocks.CRAFTING_TABLE){
-            me.sendMessage(Text.literal("DONT AVOID BREAKING CRAFTING TABLES YEAHAHH"));
             BaritoneAPI.getSettings().blocksToAvoidBreaking.value.remove(Blocks.CRAFTING_TABLE);
             BaritoneAPI.getSettings().blocksToAvoidBreaking.value.remove(Blocks.FURNACE);
         }

@@ -6,6 +6,8 @@ import org.apache.http.entity.EntityTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mojang.brigadier.CommandDispatcher;
+
 import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
 import baritone.api.process.IBaritoneProcess;
@@ -26,10 +28,13 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.ZombieEntity;
@@ -45,6 +50,8 @@ import net.minecraft.world.dimension.DimensionTypes;
 import net.minecraft.block.Blocks;
 
 
+import net.fabricmc.Acapella.commands.*;
+
 
 public class Acapella implements ModInitializer {
 
@@ -53,7 +60,7 @@ public class Acapella implements ModInitializer {
 	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger("modid");
     //public static final Item CUSTOM_ITEM = new Item(new FabricItemSettings());
-	StateMachine stateMachine;
+	public static StateMachine stateMachine;
 	boolean wasEating = false;
 	
 	@Override
@@ -82,67 +89,73 @@ public class Acapella implements ModInitializer {
 		
 		  }
 
+		  				//THIS WONT WORK IF YOU WERE TO DOWNLOAD THIS MOD. NEED ANOTHER IMPLEMENTATION
 		  //get path of each file to copy from:
+		// Path craftingPath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "crafting_table.schem");
+		// Path furnacePath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "furnace.schem");
+		// Path portalPath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "portal.schem");
 
-		Path craftingPath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "crafting_table.schem");
-		Path furnacePath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "furnace.schem");
-		Path portalPath = FileSystems.getDefault().getPath("../src/main/resources/buildSchematics/", "portal.schem");
+		// Path craftingTo = FileSystems.getDefault().getPath("schematics", "crafting_table.schem");
+		// Path furnaceTo = FileSystems.getDefault().getPath("schematics", "furnace.schem");
+		// Path portalTo = FileSystems.getDefault().getPath("schematics", "portal.schem");
 
-		Path craftingTo = FileSystems.getDefault().getPath("schematics", "crafting_table.schem");
-		Path furnaceTo = FileSystems.getDefault().getPath("schematics", "furnace.schem");
-		Path portalTo = FileSystems.getDefault().getPath("schematics", "portal.schem");
+		// if (!Files.exists(craftingTo)) {
+		// 	try {
+		// 		if (!Files.exists(craftingPath)) {
+		// 			System.err.println("Failed to copy from crafting table schematic");
+		// 		}
+		// 		Files.createFile(craftingTo);
+		// 		Files.copy(craftingPath, craftingTo, StandardCopyOption.REPLACE_EXISTING);
+		// 	} catch (IOException e) {
+		// 		System.err.println("Failed to copy file to " + e.getMessage());
+		// 	  }
+		// }
+		// if (!Files.exists(furnaceTo)) {
+		// 	try {
+		// 		if (!Files.exists(furnacePath)) {
+		// 			System.err.println("Failed to copy from furnace schematic");
+		// 		}
+		// 		Files.createFile(furnaceTo);
+		// 		Files.copy(furnacePath, furnaceTo, StandardCopyOption.REPLACE_EXISTING);
+		// 	} catch (IOException e) {
+		// 		System.err.println("Failed to copy file to " + e.getMessage());
+		// 	  }
+		// }
+		// if (!Files.exists(portalTo)) {
+		// 	try {
+		// 		if (!Files.exists(portalPath)) {
+		// 			System.err.println("Failed to copy from portal schematic");
+		// 		}
+		// 		Files.createFile(portalTo);
+		// 		Files.copy(portalPath, portalTo, StandardCopyOption.REPLACE_EXISTING);
+		// 	} catch (IOException e) {
+			// 		System.err.println("Failed to copy file to" + e.getMessage());
+			// 	  }
+			// }
+			
+			LOGGER.info("Beat Mincecraft");
+			stateMachine = new StateMachine();
+			InventoryHelper.init();
+			
+			
+			//this registers /stack commands
+			ClientCommandRegistrationCallback.EVENT.register(Acapella::registerCommands);
 
-		if (!Files.exists(craftingTo)) {
-			try {
-				if (!Files.exists(craftingPath)) {
-					System.err.println("Failed to copy from crafting table schematic");
-				}
-				Files.createFile(craftingTo);
-				Files.copy(craftingPath, craftingTo, StandardCopyOption.REPLACE_EXISTING);
-			} catch (IOException e) {
-				System.err.println("Failed to copy file to " + e.getMessage());
-			  }
-		}
-		if (!Files.exists(furnaceTo)) {
-			try {
-				if (!Files.exists(furnacePath)) {
-					System.err.println("Failed to copy from furnace schematic");
-				}
-				Files.createFile(furnaceTo);
-				Files.copy(furnacePath, furnaceTo, StandardCopyOption.REPLACE_EXISTING);
-			} catch (IOException e) {
-				System.err.println("Failed to copy file to " + e.getMessage());
-			  }
-		}
-		if (!Files.exists(portalTo)) {
-			try {
-				if (!Files.exists(portalPath)) {
-					System.err.println("Failed to copy from portal schematic");
-				}
-				Files.createFile(portalTo);
-				Files.copy(portalPath, portalTo, StandardCopyOption.REPLACE_EXISTING);
-			} catch (IOException e) {
-				System.err.println("Failed to copy file to" + e.getMessage());
-			  }
-		}
 
-		LOGGER.info("Beat Mincecraft");
-		stateMachine = new StateMachine();
-		InventoryHelper.init();
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("beatMinecraft")
-         .executes(context -> {
-             // For versions below 1.19, replace "Text.literal" with "new LiteralText".
-             context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
-
-           
-           //stateMachine.addTask("defeat enderDragon");
-
-			 stateMachine.addTask("defeat enderDragon");
-
-			 
-			 return 1;
-        })));
+			CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("beatMinecraft")
+			.executes(context -> {
+				// For versions below 1.19, replace "Text.literal" with "new LiteralText".
+				context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
+				
+				
+				//stateMachine.addTask("defeat enderDragon");
+				
+				stateMachine.addTask("defeat enderDragon");
+				
+				
+				return 1;
+			})));
 
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("interact")
          .executes(context -> {
@@ -167,44 +180,26 @@ public class Acapella implements ModInitializer {
 				stateMachine.ticksToIdle--; return;}
 			if(stateMachine == null) return;
 			if(!stateMachine.active) return;
-				
 			//check for interrupts / emergency-conditions
+				
 
-			stateMachine.evaluate(); //
+			//tick statemachine
+			stateMachine.evaluate();
 			
 
 
         });
 
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("debug")
-         .executes(context -> {
-             // For versions below 1.19, replace "Text.literal" with "new LiteralText".
-			context.getSource().sendMessage(Text.literal("Debugging Baritone"));
-			debug();
 
-			return 1;
-		})));
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("mine")
-         .executes(context -> {
-             // For versions below 1.19, replace "Text.literal" with "new LiteralText".
-			context.getSource().sendMessage(Text.literal("#stop"));
+        // CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("stack")
+        //  .executes(context -> {
 
-			ClientPlayerEntity me = MinecraftClient.getInstance().player;
-			IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(me);
-			baritone.getMineProcess().mine(10, Blocks.OAK_LOG);
+		// 	stateMachine.clearStack();
 
-			return 1;
-		})));
-
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("clearStack")
-         .executes(context -> {
-             // For versions below 1.19, replace "Text.literal" with "new LiteralText".
-			clearStack();
-
-			return 1;
-		})));
+		// 	return 1;
+		// })));
 
 		// Stay Alive Behaviors
 		ClientTickEvents.START_CLIENT_TICK.register(mc -> {
@@ -331,24 +326,8 @@ public class Acapella implements ModInitializer {
 		
     }
 
-	private void debug(){
-		ClientPlayerEntity me = MinecraftClient.getInstance().player;
-		IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(me);
-		
-		//check all baritone processes
-		LOGGER.info("" + baritone.getFollowProcess().isActive());
-		LOGGER.info("" + baritone.getMineProcess().isActive());
-		LOGGER.info("" + baritone.getBuilderProcess().isActive());
-		LOGGER.info("" + baritone.getExploreProcess().isActive());
-		LOGGER.info("" + baritone.getFarmProcess().isActive());
-		LOGGER.info("" + baritone.getCustomGoalProcess().isActive());
-		LOGGER.info("" + baritone.getGetToBlockProcess().isActive());
-
-		LOGGER.info("Statemachine State: " + stateMachine.active);
-	}
-
-	private void clearStack(){
-		stateMachine.clearStack();
+	public static void registerCommands(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess){
+		StackCommand.register(dispatcher);
 	}
 
 }
