@@ -21,4 +21,4 @@ Once we figure it out.
 
 For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
 
-For vscode users: Try ```./gradlrew build``` and then ```code .```.  Download fabrics recommended vscode plugins.
+For vscode users: Try ```./gradlew vscode``` and then ```code .```.  Download fabrics recommended vscode plugins.
