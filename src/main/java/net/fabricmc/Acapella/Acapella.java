@@ -38,6 +38,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.dimension.DimensionTypes;
@@ -53,6 +54,7 @@ public class Acapella implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("modid");
     //public static final Item CUSTOM_ITEM = new Item(new FabricItemSettings());
 	StateMachine stateMachine;
+	boolean wasEating = false;
 	
 	@Override
 	public void onInitialize() {
@@ -132,13 +134,27 @@ public class Acapella implements ModInitializer {
          .executes(context -> {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
              context.getSource().sendMessage(Text.literal("Beating Minecraft..."));
-             
+
+           
+           //stateMachine.addTask("defeat enderDragon");
 
 			 stateMachine.addTask("defeat enderDragon");
-			 //stateMachine.addTask("prepare flint and steel");
 
 			 
 			 return 1;
+        })));
+
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("interact")
+         .executes(context -> {
+             // For versions below 1.19, replace "Text.literal" with "new LiteralText".
+            context.getSource().sendMessage(Text.literal("Attempting Interaction..."));
+
+			//stateMachine.addTask("win the game");		 
+			MinecraftClient client = MinecraftClient.getInstance();
+			client.getServer().getCommandManager().execute(client.getServer().getCommandManager().getDispatcher().parse("kill @e[type=ender_dragon]", client.getServer().getCommandSource()), "kill @e[type=ender_dragon]");
+
+			
+			return 1;
         })));
 
 
@@ -146,6 +162,9 @@ public class Acapella implements ModInitializer {
 			if(minecraftClient.player == null) return;   //prevents this function from running while in game menu
 			//THIS FUNCTION RUNS EVERY SINGLE TICK.
 			//THIS FUNCTION HANDLES CODE THAT SHOULD ONLY BE RELEVANT DURING THE EXECUTION OF /beatMinecraft
+			if(stateMachine.ticksToIdle > 0){ 
+				LOGGER.info("Ticks left: " + stateMachine.ticksToIdle);
+				stateMachine.ticksToIdle--; return;}
 			if(stateMachine == null) return;
 			if(!stateMachine.active) return;
 				
@@ -170,7 +189,7 @@ public class Acapella implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("mine")
          .executes(context -> {
              // For versions below 1.19, replace "Text.literal" with "new LiteralText".
-			context.getSource().sendMessage(Text.literal("Mining some wood"));
+			context.getSource().sendMessage(Text.literal("#stop"));
 
 			ClientPlayerEntity me = MinecraftClient.getInstance().player;
 			IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(me);
@@ -201,15 +220,38 @@ public class Acapella implements ModInitializer {
 			if(mc.world != null && mc.player.getHungerManager().isNotFull()){
 				//Eat
 				PlayerInventory inventory = mc.player.getInventory();
-				for (int i = 0; i < inventory.size();i++){
+				for (int i = 0; i < 9;i++){
 					ItemStack stack = inventory.getStack(i);
 					if(stack.isFood()){
-						mc.player.eatFood(mc.world, stack);
+						if(inventory.selectedSlot != i){
+						inventory.selectedSlot = i;
+						inventory.markDirty();
+						//stack.finishUsing(mc.world, mc.player);
+						//mc.player.eatFood(mc.world, stack);
+						// mc.player.setCurrentHand(Hand.MAIN_HAND);
+						// mc.player.emitGameEvent(GameEvent.ITEM_INTERACT_START);
+						// ServerWorld world = mc.getServer().getWorld((RegistryKey<World>)mc.getServer().getWorldRegistryKeys().toArray()[0]);
+						// ServerPlayerEntity playerServer = world.getPlayers().get(0);
+						// LOGGER.info(Boolean.toString(world.isClient));
+						// for (int j = 0; j < 35; j++){
+						// 	//LOGGER.info(Integer.toString(mc.player.getItemUseTimeLeft()));
+						// 	((LivingEntity)mc.player).tick();
+						// 	((LivingEntity)playerServer).tick();
+						// }
+						
+						}
+						//mc.player.handleStatus(EntityStatuses.CONSUME_ITEM);
+						mc.options.useKey.setPressed(true);
+						wasEating = true;
 						break;
 					}
 				}
 			}
 			else{
+				if(wasEating){
+					mc.options.useKey.setPressed(false);
+				}
+				
 				if (mc.world != null && mc.world.getTime() % 15 == 0) {
 					Box nearby = new Box(mc.player.getBlockPos().add(-6,-6,-6),mc.player.getBlockPos().add(6,6,6));
 					List<Entity> entities = new ArrayList<Entity>();
@@ -257,7 +299,25 @@ public class Acapella implements ModInitializer {
 						LOGGER.info(entity.getEntityName());
 						entities.add( entity);
 					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.WITHER_SKELETON, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.MAGMA_CUBE, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
 
+					for (Entity entity : mc.world.getEntitiesByType(EntityType.PIGLIN, nearby, i->true)){
+						LOGGER.info(entity.getEntityName());
+						entities.add( entity);
+					}
+
+					if(entities.size() > 0){
+						PlayerInventory inventory = mc.player.getInventory();
+						inventory.selectedSlot = 0;
+						inventory.markDirty();
+					}
 
 					entities.forEach(entity -> {
 						if (entity.isAttackable()){
