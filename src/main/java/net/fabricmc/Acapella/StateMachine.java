@@ -179,30 +179,20 @@ public class StateMachine {
         String task = task_arg.task;
         List<String> args = task_arg.args;
 
-
         if(actions.get(task) == null){
             LOGGER.info("initiate_task: No mapping exists for this task!");
-            me.sendMessage(Text.literal("INITIATE TASK FAILED"));
+            me.sendMessage(Text.literal("This task does not exist."));
             clearStack();
             return;
         }
 
-         
         try{
-            Method method;
-            if(args == null || args.size() == 0){
-                method = this.getClass().getDeclaredMethod( actions.get(task)) ;
-            }else{
-                method = this.getClass().getDeclaredMethod( actions.get(task), List.class) ;
-            }
-            
+            Method method = this.getClass().getDeclaredMethod( actions.get(task), List.class) ;
             method.setAccessible(true);
             try{
-                if(args == null || args.size() == 0){
-                    Object o = method.invoke(this);
-                }else{
-                    Object o = method.invoke(this,args);
-                }
+                Object o = method.invoke(this,args);
+            
+            
             } catch(IllegalAccessException e){
                 LOGGER.info("initiate_task: No accessing that from here");
             } catch (InvocationTargetException e){
@@ -210,6 +200,7 @@ public class StateMachine {
             } catch (Exception e){
                 LOGGER.info("initiate_task: " + e.toString());
             }
+
         } catch(NoSuchMethodException e){
             LOGGER.info("initiate_task: No method found");
         }
@@ -233,28 +224,18 @@ public class StateMachine {
     private boolean check_condition(Task task_arg){
         String task = task_arg.task;
         List<String> args = task_arg.args;
-        LOGGER.info("check condition " + args.size());
         
-        String conditionFuncName = conditions.get(task);
-        if(conditionFuncName == null) return true;
-        if(conditionFuncName == "$") return true;
+        String this_condition = conditions.get(task);
+        if(this_condition == null) return true;
+        if(this_condition == "$") return true;
         try{
-            Method method;
-            if(args == null || args.size() == 0){
-                method = this.getClass().getDeclaredMethod( conditionFuncName) ;
-            }else{
-                method = this.getClass().getDeclaredMethod( conditionFuncName, List.class) ;
-            }
+            Method method = this.getClass().getDeclaredMethod(this_condition, List.class);
             method.setAccessible(true);
 
             try{
-                Object o;
-                if(args == null || args.size() == 0){
-                    o = method.invoke(this);
-                }else{
-                    o = method.invoke(this,args);
-                }
+                Object o = method.invoke(this,args);
                 return (boolean)o;
+
             } catch(IllegalAccessException e){
                 LOGGER.info("check_condition: No accessing that from here");
             } catch (InvocationTargetException e){
@@ -266,6 +247,7 @@ public class StateMachine {
             LOGGER.info("check_condition: No method found");
         }
 
+        me.sendMessage(Text.literal("This line should never run"));
         return false;
     }
 
@@ -298,9 +280,8 @@ public class StateMachine {
             { "mine obsidian", "mineObsidian"},
             { "make portal", "placePortal"},
             { "goin portal", "goinPortal"},
-            { "light portal", "lightPortal"},
+            { "right click", "rightClick"},
             { "create portal", "createPortal"},
-            { "clean inputs", "releaseKeyboard"},
             { "goto water", "gotoWater"},
             { "grab water", "grabWater"},
             { "get water", "getWater"},
@@ -333,6 +314,7 @@ public class StateMachine {
             { "move eye", "moveEyeToPosition5"},
             { "goto stronghold", "throwEye"},
             { "release keys", "releaseKeyboard"},
+            { "clean inputs", "releaseKeyboard"},
             { "idle 1", "idle1"},
             { "use furnace with iron", "furnaceIron"},
             { "start furnace", "openFurnace"},
@@ -343,6 +325,7 @@ public class StateMachine {
             {"goto stone brick stairs", "gotoStoneBrickStairs"},
             {"goto portal room", "gotoPortalRoom"},
             {"goto bedrock", "gotoBedrock"},
+            {"right click and release","rightClickAndRelease"},
         }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 
@@ -364,7 +347,7 @@ public class StateMachine {
             { "mine obsidian", "$" },
             { "make portal", "$" },
             { "goin portal", "$" },
-            { "light portal", "$" },
+            { "right click", "$" },
             { "prepare flint and steel", "$" },
             { "clean inputs", "$" },
             { "goto water", "$"},
@@ -379,7 +362,7 @@ public class StateMachine {
     }
 
 
-    public void ultimateTask(){
+    public void ultimateTask(List<String> args){
         the_stack.pop();
 
 
@@ -437,9 +420,9 @@ public class StateMachine {
 
         closeAndGrabCraftingTable();
         addTask("CRAFTGENERIC","stone_pickaxe","1");
-        // addTask("CRAFTGENERIC","stone_sword","1");
+        addTask("CRAFTGENERIC","stone_sword","1");
         addTask("CRAFTGENERIC","stone_axe","1");
-        // addTask("CRAFTGENERIC","stone_shovel","1");
+        addTask("CRAFTGENERIC","stone_shovel","1");
         placeAndOpenCraftingTable();
 
         addTask("GETGENERIC", "cobblestone","15","stone");
@@ -477,7 +460,7 @@ public class StateMachine {
         
     }
 
-    public void furnaceIron(){
+    public void furnaceIron(List<String> args){
         the_stack.pop();
         addTask("smelt iron");
         addTask("start furnace");
@@ -488,7 +471,7 @@ public class StateMachine {
         
     }
 
-    public void getPlanks(){
+    public void getPlanks(List<String> args){
         the_stack.pop();
         addTask("close inventory");
         addTask("CRAFTGENERIC", "oak_planks", "7");
@@ -496,16 +479,16 @@ public class StateMachine {
         addTask("GETGENERIC","oak_log", "7");
     }
 
-    public void setRadiusSmall(){
+    public void setRadiusSmall(List<String> args){
         BaritoneAPI.getSettings().blockReachDistance.value = 10f;
     }
 
-    public void setRadiusLarge(){
+    public void setRadiusLarge(List<String> args){
         BaritoneAPI.getSettings().blockReachDistance.value = 200f;
 
     }
 
-    public void breakBlockUnderneath(){
+    public void breakBlockUnderneath(List<String> args){
         BlockPos playerPos = BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext().playerFeet();
 
         // Calculate the position of the block to break (crafting table in this case)
@@ -535,23 +518,18 @@ public class StateMachine {
                 newArray[i+1] = Registries.BLOCK.get(Identifier.tryParse(args.get(i + 2)));
             }
         }
-        
-
         try {
             number = Integer.parseInt(args.get(1));
         } catch (NumberFormatException e) {
             LOGGER.info("Invalid number format: " + args.get(1));
             number = 5;
         }
-
-        getMaterial(number, newArray);
-
-
-        LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.value.get(0).toString());
         if(BaritoneAPI.getSettings().blocksToAvoidBreaking.value.get(0) == Blocks.CRAFTING_TABLE){
             BaritoneAPI.getSettings().blocksToAvoidBreaking.value.remove(Blocks.CRAFTING_TABLE);
             BaritoneAPI.getSettings().blocksToAvoidBreaking.value.remove(Blocks.FURNACE);
         }
+
+        baritone.getMineProcess().mine(number, newArray);
     }
 
 
@@ -575,7 +553,7 @@ public class StateMachine {
 
 
 
-    public void getWater() {
+    public void getWater(List<String> args) {
         the_stack.pop();
         addTask("clean inputs");
         addTask("grab water");
@@ -583,10 +561,9 @@ public class StateMachine {
     }
 
 
-    public void createPortal() {
+    public void createPortal(List<String> args) {
         the_stack.pop();
-        addTask("clean inputs");
-        addTask("light portal");
+        addTask("right click and release");
         addTask("idle custom","50");
         addTask("prepare flint and steel");
         addTask("goin portal");
@@ -594,17 +571,9 @@ public class StateMachine {
     }
 
 
-    public void none(){
+    public void none(List<String> args){
         LOGGER.info("blank state");
         return;
-    }
-    
-    public void getMaterial (int num, Block... my_blocks){
-        // LOGGER.info("Getting " + block.getName() );
-        // my_blocks.add(block);
-        baritone.getMineProcess().mine(num, my_blocks);
-        
-    
     }
 
     public void clearStack(){
@@ -614,16 +583,16 @@ public class StateMachine {
         the_stack.push(new Task("$"));
     }
 
-    public void openCraftingTable(){
+    public void openCraftingTable(List<String> args){
         baritone.getGetToBlockProcess().getToBlock(Blocks.CRAFTING_TABLE);
     }
 
-    public void openInventory(){
+    public void openInventory(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         client.setScreen(new InventoryScreen(client.player));
     }
 
-    public void closeScreen(){
+    public void closeScreen(List<String> args){
         mc.setScreen(null);
     }
 
@@ -641,11 +610,11 @@ public class StateMachine {
     }
 
 
-    public void openFurnace(){
+    public void openFurnace(List<String> args){
         baritone.getGetToBlockProcess().getToBlock(Blocks.FURNACE);
     }
 
-    public void smeltIron(){
+    public void smeltIron(List<String> args){
         smeltItem(Items.RAW_IRON);
     }
 
@@ -679,33 +648,33 @@ public class StateMachine {
         return 1000;
     }
 
-    public void retrieveFurnaceItems(){
+    public void retrieveFurnaceItems(List<String> args){
         the_stack.pop();
         addTask("close inventory");
         addTask("retrieve slot3");
         // addTask("start furnace");
     }
 
-    public void retrieveSlot3(){
+    public void retrieveSlot3(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, 2, 0, SlotActionType.QUICK_MOVE, client.player);        
     }
 
-    public void prepareFlintAndSteel(){
+    public void prepareFlintAndSteel(List<String> args){
         the_stack.pop();
         addTask("close inventory");
         addTask("move flint and steel");
         addTask("open inventory");
     }
 
-    public void prepareFurnace(){
+    public void prepareFurnace(List<String> args){
         the_stack.pop();
         addTask("close inventory");
         addTask("move furnace");
         addTask("open inventory");
     }
 
-    public void moveFlintAndSteelToPosition4(){
+    public void moveFlintAndSteelToPosition4(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FLINT_AND_STEEL));
         swapSlots(slot, 39);
@@ -713,7 +682,7 @@ public class StateMachine {
 
     }
 
-    public void moveFurnaceToPosition5(){
+    public void moveFurnaceToPosition5(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.FURNACE));
         swapSlots(slot, 41);
@@ -740,7 +709,7 @@ public class StateMachine {
         return 1000; 
     }
 
-    public void farmBlazes(){
+    public void farmBlazes(List<String> args){
         the_stack.pop();
         addTask("kill blazes", "blaze_rod", "7");
         addTask("goto spawner");
@@ -748,7 +717,7 @@ public class StateMachine {
 
     }
 
-    public void farmEndermen(){
+    public void farmEndermen(List<String> args){
         the_stack.pop();
         addTask("kill endermen", "ender_pearl", "12");
         // addTask("goto spawner");
@@ -766,7 +735,7 @@ public class StateMachine {
     // }
 
 
-    public void gotoSpawner(){
+    public void gotoSpawner(List<String> args){
         baritone.getGetToBlockProcess().getToBlock(Blocks.SPAWNER);
     }
 
@@ -805,7 +774,7 @@ public class StateMachine {
     }
 
 
-    public void placeCraftingTable(){
+    public void placeCraftingTable(List<String> args){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos craftingPos = me.getBlockPos();
 
@@ -827,7 +796,7 @@ public class StateMachine {
 
     }
 
-    public void moveNorthOne(){
+    public void moveNorthOne(List<String> args){
         BlockPos my_pos = me.getBlockPos();
         Goal newt = new GoalBlock(my_pos.getX(), my_pos.getY(), my_pos.getZ() - 2);
         //Goal newGoal = new GoalXZ(lastPortalPos.getX(), lastPortalPos.getZ() + 1);
@@ -836,20 +805,17 @@ public class StateMachine {
         
     }
     
-    public void lookAngled(){
+    public void lookAngled(List<String> args){
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         Rotation rotate = new Rotation(0, 40);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
 
     }
 
-    public void placeFurnace() {
- 
-        
+    public void placeFurnace(List<String> args){
+        //new way of doing this, build a schematic that builds an empty room, and then place it in the middle.
+        //or figure out how to get baritone to mine specific blocks, relative to the player.
 
-        // Check if the hit result is a block
-        
-        
         HitResult hitResult = mc.crosshairTarget;
         if (hitResult.getType() == BlockHitResult.Type.BLOCK) {
             // Get the block position from the hit result
@@ -863,32 +829,10 @@ public class StateMachine {
                 BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
                 BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
             }
-
         }
-
-        // BaritoneAPI.getSettings().buildIgnoreDirection.value = true;
-        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing=north");
-        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("lit");
-        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("facing");
-        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("list=false");
-        // BaritoneAPI.getSettings().buildIgnoreProperties.value.add("[facing=north,lit=false]");
-        
-        // LOGGER.info(BaritoneAPI.getSettings().blocksToAvoidBreaking.toString());
-        // LOGGER.info(BaritoneAPI.getSettings().buildIgnoreProperties.toString());
-
-
-        // ClientPlayerEntity me = MinecraftClient.getInstance().player;
-        // BlockPos craftingPos = me.getBlockPos();
-
-        // BaritoneAPI.getSettings().allowInventory.value = true;
-        // Boolean out = BaritoneAPI.getProvider().getBaritoneForPlayer(me).getBuilderProcess().build("furnace.schem", craftingPos);
-
-        // if (!out) {
-        //     me.sendMessage(Text.literal("failed to place furnace"));
-        // }
     }
 
-    public void gotoWater() {
+    public void gotoWater(List<String> args){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
 
         //goto water
@@ -898,10 +842,9 @@ public class StateMachine {
         Rotation rotate = new Rotation(0, 90);
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
-
     }
 
-    public void grabWater() {
+    public void grabWater(List<String> args){
         //right click with bucket
         if (checkAllHeldItem(Items.BUCKET)) {
 
@@ -913,14 +856,14 @@ public class StateMachine {
     
     }
 
-    public void equipAllArmor(){
+    public void equipAllArmor(List<String> args){
         the_stack.pop();
         addTask("close inventory");
         addTask("equip armor");
         addTask("open inventory");
     }
 
-    public void equipArmor(){
+    public void equipArmor(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         PlayerInventory inventory = client.player.getInventory();
 
@@ -930,20 +873,20 @@ public class StateMachine {
                 client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 1, SlotActionType.QUICK_MOVE, client.player);        
             }
         }
-
     }
-    public void winTheGame(){
+
+    public void winTheGame(List<String> args){
         the_stack.pop();
         addTask("goto bedrock");
     }
 
-    public void gotoBedrock(){
+    public void gotoBedrock(List<String> args){
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getGetToBlockProcess().getToBlock(Blocks.BEDROCK);
         MinecraftClient client = MinecraftClient.getInstance();
         client.getServer().getCommandManager().execute(client.getServer().getCommandManager().getDispatcher().parse("kill @e[type=ender_dragon]", client.getServer().getCommandSource()), "kill @e[type=ender_dragon]");
     }
 
-    public void gotoPortalRoom(){
+    public void gotoPortalRoom(List<String> args){
         the_stack.pop();
         //addTask("break underneath");
         addTask("fill frames");
@@ -952,18 +895,17 @@ public class StateMachine {
         addTask("goto stone brick stairs");
     }
 
-    public void fillFrames(){
+    public void fillFrames(List<String> args){
         mc.player.getInventory().selectedSlot = 4;
         mc.player.getInventory().markDirty();
         for (int i = 0; i < end_frames.size(); i ++){
             mc.interactionManager.interactBlock(me, me.getActiveHand(), (BlockHitResult) new BlockHitResult(end_frames.get(i), Direction.DOWN, new BlockPos((int)end_frames.get(i).x, (int)end_frames.get(i).y, (int)end_frames.get(i).z), true));
 
         }
-
         end_frames.clear();
     }
 
-    public void gotoCenterOfFrames(){
+    public void gotoCenterOfFrames(List<String> args){
         int averageX = 0;
         int averageY = 0;
         int averageZ = 0;
@@ -978,11 +920,9 @@ public class StateMachine {
         LOGGER.info(averageX + " " + averageY + " " + averageZ);
         Goal newt = new GoalNear( new BlockPos(averageX, averageY + 1, averageZ), 2);
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getCustomGoalProcess().setGoalAndPath(newt);
-
-        
     }
 
-    public void fillFrameData(){
+    public void fillFrameData(List<String> args){
         MinecraftClient mc = MinecraftClient.getInstance();
         ClientPlayerEntity me = mc.player;
         int minX = (int)mc.player.getX() - 10;
@@ -991,7 +931,6 @@ public class StateMachine {
         int maxY = (int)mc.player.getY() + 10;
         int minZ = (int)mc.player.getZ() - 10;
         int maxZ = (int)mc.player.getZ() + 10;
-
 
         for (int x = minX; x < maxX; x ++){
             for(int y = minY; y < maxY; y++){
@@ -1008,12 +947,12 @@ public class StateMachine {
         }
     }
 
-    public void gotoStoneBrickStairs(){
+    public void gotoStoneBrickStairs(List<String> args){
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getGetToBlockProcess().getToBlock(Blocks.STONE_BRICK_STAIRS);
     }
 
 
-    public void throwEye(){
+    public void throwEye(List<String> args){
         the_stack.pop();
         addTask("try goto stronghold");
         addTask("look at eye");
@@ -1025,7 +964,7 @@ public class StateMachine {
         addTask("open inventory");
     }
 
-    public void tryGotoStronghold(){
+    public void tryGotoStronghold(List<String> args){
         Box nearby = new Box(mc.player.getBlockPos().add(-20,-20,-20),mc.player.getBlockPos().add(20,20,20));
         for (Entity entity : mc.world.getEntitiesByType(EntityType.EYE_OF_ENDER, nearby, i->true)){
             lastEyePos = entity.getEyePos();
@@ -1040,7 +979,7 @@ public class StateMachine {
         baritone.getCustomGoalProcess().setGoalAndPath(goal);
     }
 
-    public void lookAtEye(){
+    public void lookAtEye(List<String> args){
         Box nearby = new Box(mc.player.getBlockPos().add(-20,-20,-20),mc.player.getBlockPos().add(20,20,20));
         Vec3d lookHere;
         for (Entity entity : mc.world.getEntitiesByType(EntityType.EYE_OF_ENDER, nearby, i->true)){
@@ -1050,7 +989,7 @@ public class StateMachine {
         }
     }
 
-    public void useEye(){
+    public void useEye(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         client.player.getInventory().selectedSlot = 4;
         client.player.getInventory().markDirty();
@@ -1059,7 +998,7 @@ public class StateMachine {
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
     }
 
-    public void moveEyeToPosition5(){
+    public void moveEyeToPosition5(List<String> args){
         MinecraftClient client = MinecraftClient.getInstance();
         int slot = findInSlots(client.player.currentScreenHandler.slots, Registries.ITEM.getId(Items.ENDER_EYE));
         if(slot != 40){
@@ -1067,7 +1006,7 @@ public class StateMachine {
         }
     }
 
-    public void findObsidian() {
+    public void findObsidian(List<String> args) {
         //doing a really weird obsidian generator
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
 
@@ -1076,7 +1015,7 @@ public class StateMachine {
     }
 
     //will follow findObsidian return
-    public void placeWater() {
+    public void placeWater(List<String> args){
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         
         //look down to place water
@@ -1093,11 +1032,11 @@ public class StateMachine {
         }
     }
 
-    public void mineObsidian() {
+    public void mineObsidian(List<String> args){
         baritone.getMineProcess().mine(28, Blocks.OBSIDIAN);
     }
 
-    public void placePortal() {
+    public void placePortal(List<String> args){
         //under no circumstances should this function be constructed with less than 14 obsidian in hand.
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BlockPos portalPos = me.getBlockPos();
@@ -1111,13 +1050,11 @@ public class StateMachine {
         if (!out) {
             me.sendMessage(Text.literal("failed to build nether portal"));
         } 
-
         lastPortalPos = portalPos;
-
     }
 
     //NOTE: only works on a portal you've placed immeditaly before. Otherwise, lightPortal will just fail.
-    public void goinPortal() {
+    public void goinPortal(List<String> args) {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         //navigate to y + 1 z + 1 location at portalPos
         BaritoneAPI.getSettings().blocksToDisallowBreaking.value.add(Blocks.OBSIDIAN);
@@ -1128,16 +1065,21 @@ public class StateMachine {
     }
     
     
-    public void lightPortal() {
-        ClientPlayerEntity me = MinecraftClient.getInstance().player;
-
-        //time to light the portal:
-
-        //look down on portal block
+    public void lookDown(List<String> args){
+        //look down
         Rotation rotate = new Rotation(0, 90);
         BaritoneAPI.getSettings().antiCheatCompatibility.value = false;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getLookBehavior().updateTarget(rotate, true);
-        
+    }
+
+    public void rightClickAndRelease(List<String> args){
+        the_stack.pop();
+        addTask("clean inputs");
+        addTask("right click");
+    }
+
+    public void rightClick(List<String> args) {
+        //time to light the portal:
         //reset setting
         BaritoneAPI.getSettings().allowWaterBucketFall.value = true;
         BaritoneAPI.getSettings().blocksToDisallowBreaking.value.remove(Blocks.OBSIDIAN);
@@ -1148,11 +1090,9 @@ public class StateMachine {
             BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
         }
         //don't forget to release keyboard input when stack is implemented
-
-        
     }
 
-    public void releaseKeyboard() {
+    public void releaseKeyboard(List<String> args) {
         ClientPlayerEntity me = MinecraftClient.getInstance().player;
         BaritoneAPI.getProvider().getBaritoneForPlayer(me).getInputOverrideHandler().clearAllKeys();
     }
@@ -1206,7 +1146,7 @@ public class StateMachine {
 
     }
 
-    private boolean foundStronghold(){
+    private boolean foundStronghold(List<String> args){
         LOGGER.info(Double.toString(lastEyePos.x + lastEyePos.z)  + " " + Double.toString(me.getX() + me.getZ()));
         if(lastEyePos.x + lastEyePos.z < me.getX() + me.getZ()) {
             return true;
